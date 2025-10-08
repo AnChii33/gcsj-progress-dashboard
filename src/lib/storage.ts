@@ -46,6 +46,12 @@ export const storage = {
     this.setUploads(uploads);
   },
 
+  removeUpload(uploadId: string): void {
+    const uploads = this.getUploads();
+    const filtered = uploads.filter((u) => u.id !== uploadId);
+    this.setUploads(filtered);
+  },
+
   clearAll(): void {
     localStorage.removeItem(STORAGE_KEYS.PARTICIPANTS);
     localStorage.removeItem(STORAGE_KEYS.SNAPSHOTS);
