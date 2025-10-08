@@ -1,5 +1,7 @@
-  const handleDeleteUpload = (uploadId: string) => {
-    storage.removeUpload(uploadId);
+  const handleDeleteUpload = async (uploadId: string, filename: string, reportDate: string) => {
+    await storage.removeUpload(uploadId, filename, reportDate);
+    // Reload participants and uploads after delete
+    setParticipants(storage.getParticipants());
     setUploads(storage.getUploads());
   };
 import { useState, useEffect } from 'react';
@@ -398,7 +400,7 @@ export function AdminDashboard() {
                         <button
                           className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           title="Delete upload"
-                          onClick={() => handleDeleteUpload(upload.id)}
+                          onClick={() => handleDeleteUpload(upload.id, upload.filename, upload.reportDate)}
                         >
                           <X className="w-5 h-5" />
                         </button>
