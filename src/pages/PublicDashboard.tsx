@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+  // Allow manual reload for live updates after admin deletes
+  const handleReload = () => {
+    loadData();
+  };
 import { useNavigate } from 'react-router-dom';
 import { storage } from '../lib/storage';
 import { Participant } from '../types';
@@ -50,6 +54,14 @@ export function PublicDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex justify-end max-w-7xl mx-auto px-4 pt-4">
+        <button
+          className="px-3 py-1 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 text-sm"
+          onClick={handleReload}
+        >
+          Reload Data
+        </button>
+      </div>
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -139,6 +151,8 @@ export function PublicDashboard() {
                     <h3 className="text-lg font-semibold text-slate-800 mb-1">
                       {participant.userName}
                     </h3>
+                    <p className="text-sm text-slate-600 mb-3">{participant.userEmail}</p>
+
                     <div className="flex flex-wrap gap-3">
                       <div className="flex items-center gap-2">
                         <Award className="w-4 h-4 text-blue-600" />
