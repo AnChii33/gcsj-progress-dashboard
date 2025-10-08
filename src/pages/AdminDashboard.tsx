@@ -1,3 +1,7 @@
+  const handleDeleteUpload = (uploadId: string) => {
+    storage.removeUpload(uploadId);
+    setUploads(storage.getUploads());
+  };
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -384,11 +388,20 @@ export function AdminDashboard() {
                           Report Date: {new Date(upload.reportDate).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-slate-700">
-                          {upload.participantCount}
-                        </p>
-                        <p className="text-xs text-slate-600">participants</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-slate-700">
+                            {upload.participantCount}
+                          </p>
+                          <p className="text-xs text-slate-600">participants</p>
+                        </div>
+                        <button
+                          className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Delete upload"
+                          onClick={() => handleDeleteUpload(upload.id)}
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                   ))
