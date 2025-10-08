@@ -46,10 +46,46 @@ export const storage = {
     this.setUploads(uploads);
   },
 
-  removeUpload(uploadId: string): void {
+  /**
+   * Remove upload by id, delete related participants and snapshots, and delete the CSV file from data folder.
+   * @param uploadId The id of the upload to remove
+   * @param filename The filename of the CSV to delete from data folder
+   * @param reportDate The reportDate of the upload (to match snapshots)
+   */
+  async removeUpload(uploadId: string, filename: string, reportDate: string): Promise<void> {
+    // Remove upload from uploads
     const uploads = this.getUploads();
-    const filtered = uploads.filter((u) => u.id !== uploadId);
-    this.setUploads(filtered);
+    const filteredUploads = uploads.filter((u) => u.id !== uploadId);
+    this.setUploads(filteredUploads);
+
+    // Remove snapshots for this reportDate
+    const snapshots = this.getSnapshots();
+    const filteredSnapshots = snapshots.filter((s) => s.date !== reportDate);
+    this.setSnapshots(filteredSnapshots);
+
+    // Remove participants who only have history for this reportDate
+    const participants = this.getParticipants();
+    // Find participantIds that had a snapshot for this reportDate
+    const removedSnapshotIds = snapshots.filter((s) => s.date === reportDate).map((s) => s.participantId);
+    // Remove participants if they have no other snapshots left
+    const remainingSnapshotIds = filteredSnapshots.map((s) => s.participantId);
+    const filteredParticipants = participants.filter((p) => remainingSnapshotIds.includes(p.id));
+    this.setParticipants(filteredParticipants);
+
+    // Delete the CSV file from the data folder (if running in Node/Electron)
+    try {
+      // @ts-ignore
+      if (typeof window === 'undefined' && require) {
+        const fs = require('fs');
+        const path = require('path');
+        const dataPath = path.join(__dirname, '../data', filename);
+        if (fs.existsSync(dataPath)) {
+          fs.unlinkSync(dataPath);
+        }
+      }
+    } catch (e) {
+      // Ignore file deletion errors in browser
+    }
   },
 
   clearAll(): void {
