@@ -10,6 +10,11 @@ A comprehensive dashboard for tracking Google Cloud Skills Boost participant pro
 - **Database Integration**: All data persisted in Supabase
 - **Delete Uploads**: Remove uploaded CSV files and cascade delete related data
 
+## Admin Credentials
+
+**Email**: `admin@stcet.edu.in`
+**Password**: `AdminSTCET2024!`
+
 ## Usage
 
 ### Public Dashboard (`/`)
@@ -32,9 +37,9 @@ The CSV file should contain these columns:
 - Profile URL Status
 - Access Code Redemption Status
 - All Skill Badges & Games Completed
-- # of Skill Badges Completed
+- \# of Skill Badges Completed
 - Names of Completed Skill Badges
-- # of Arcade Games Completed
+- \# of Arcade Games Completed
 - Names of Completed Arcade Games
 
 **Important**: When uploading a CSV with date Oct 8, it represents progress up to Oct 7 midnight.
