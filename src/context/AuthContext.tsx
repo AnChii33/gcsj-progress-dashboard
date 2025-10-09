@@ -10,7 +10,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_CREDENTIALS = {
-  email: 'admin@stcet.edu.in',
+  email: 'admin',
   password: 'AdminSTCET2024!',
 };
 
