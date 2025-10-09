@@ -10,11 +10,6 @@ A comprehensive dashboard for tracking Google Cloud Skills Boost participant pro
 - **Database Integration**: All data persisted in Supabase
 - **Delete Uploads**: Remove uploaded CSV files and cascade delete related data
 
-## Admin Credentials
-
-**Email**: `admin@stcet.edu.in`
-**Password**: `AdminSTCET2024!`
-
 ## Usage
 
 ### Public Dashboard (`/`)
