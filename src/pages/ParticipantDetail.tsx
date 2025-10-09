@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { storage } from '../lib/storage';
+import { database } from '../lib/database';
 import { Participant, DailySnapshot } from '../types';
+import { EmailVerificationModal } from '../components/EmailVerificationModal';
 import {
   ArrowLeft,
   Award,
@@ -11,73 +12,114 @@ import {
   XCircle,
   Calendar,
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [history, setHistory] = useState<DailySnapshot[]>([]);
+  const [showVerification, setShowVerification] = useState(true);
+  const [verified, setVerified] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (id) {
+    if (id && verified) {
       loadParticipantData(id);
     }
-  }, [id]);
+  }, [id, verified]);
 
-  const loadParticipantData = (participantId: string) => {
-    const participants = storage.getParticipants();
-    const found = participants.find((p) => p.id === participantId);
+  const loadParticipantData = async (participantId: string) => {
+    try {
+      const participants = await database.getParticipants();
+      const found = participants.find((p) => p.id === participantId);
 
-    if (found) {
-      setParticipant(found);
+      if (found) {
+        setParticipant(found);
 
-      const allSnapshots = storage.getSnapshots();
-      const participantSnapshots = allSnapshots
-        .filter((s) => s.participantId === participantId)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      setHistory(participantSnapshots);
+        const participantSnapshots = await database.getSnapshotsByParticipant(participantId);
+        setHistory(participantSnapshots);
+      }
+    } catch (error) {
+      console.error('Failed to load participant data:', error);
     }
   };
+
+  const handleEmailVerify = async (email: string) => {
+    try {
+      const verifiedParticipant = await database.getParticipantByEmail(email);
+
+      if (verifiedParticipant && verifiedParticipant.id === id) {
+        setVerified(true);
+        setShowVerification(false);
+        setError('');
+      } else {
+        setError('Email does not match this participant');
+      }
+    } catch (error) {
+      setError('Failed to verify email');
+    }
+  };
+
+  const handleCloseModal = () => {
+    navigate('/');
+  };
+
+  if (showVerification && !verified) {
+    return (
+      <EmailVerificationModal
+        onVerify={handleEmailVerify}
+        onClose={handleCloseModal}
+        participantName={participant?.userName || 'this participant'}
+      />
+    );
+  }
 
   if (!participant) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">Participant Not Found</h2>
-          <button
-            onClick={() => navigate('/')}
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Return to Dashboard
-          </button>
+          <h2 className="text-2xl font-bold text-slate-800 mb-4">Loading...</h2>
         </div>
       </div>
     );
   }
-
-  const chartData = history.map((snapshot) => ({
-    date: new Date(snapshot.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    badges: snapshot.skillBadgesCount,
-    games: snapshot.arcadeGamesCount,
-  }));
-
-  const badgesList = participant.skillBadgeNames
-    ? participant.skillBadgeNames.split('|').map((b) => b.trim()).filter(Boolean)
-    : [];
-
-  const gamesList = participant.arcadeGameNames
-    ? participant.arcadeGameNames.split('|').map((g) => g.trim()).filter(Boolean)
-    : [];
 
   const progressChange =
     history.length >= 2
       ? history[history.length - 1].skillBadgesCount - history[0].skillBadgesCount
       : 0;
 
+  const timelineData = history.map((snapshot, index) => {
+    const prevSnapshot = index > 0 ? history[index - 1] : null;
+    const newBadges = prevSnapshot
+      ? snapshot.skillBadgesCount - prevSnapshot.skillBadgesCount
+      : snapshot.skillBadgesCount;
+
+    const currentBadges = snapshot.skillBadgeNames
+      ? snapshot.skillBadgeNames.split('|').map((b) => b.trim()).filter(Boolean)
+      : [];
+    const prevBadges = prevSnapshot?.skillBadgeNames
+      ? prevSnapshot.skillBadgeNames.split('|').map((b) => b.trim()).filter(Boolean)
+      : [];
+
+    const newBadgeNames = currentBadges.filter((badge) => !prevBadges.includes(badge));
+
+    return {
+      date: snapshot.date,
+      newBadges,
+      newBadgeNames,
+      totalBadges: snapshot.skillBadgesCount,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 p-3 text-center text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <button
@@ -91,7 +133,7 @@ export function ParticipantDetail() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800 mb-2">{participant.userName}</h1>
-              <p className="text-slate-600 mb-2">{}</p>
+              <p className="text-slate-600 mb-2">{participant.userEmail}</p>
               <a
                 href={participant.profileUrl}
                 target="_blank"
@@ -165,138 +207,57 @@ export function ParticipantDetail() {
 
         {history.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-            <h2 className="text-xl font-bold text-slate-800 mb-6">Progress Over Time</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" stroke="#64748b" />
-                  <YAxis stroke="#64748b" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="badges"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    name="Skill Badges"
-                    dot={{ fill: '#3b82f6', r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="games"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    name="Arcade Games"
-                    dot={{ fill: '#10b981', r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {badgesList.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Completed Skill Badges</h2>
-            <div className="grid gap-3">
-              {badgesList.map((badge, index) => (
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Day-Wise Progress Timeline</h2>
+            <div className="space-y-4">
+              {timelineData.map((day, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100"
+                  className={`border-l-4 pl-6 pb-6 ${
+                    day.newBadges > 0 ? 'border-blue-500' : 'border-slate-300'
+                  } ${index === timelineData.length - 1 ? 'pb-0' : ''}`}
                 >
-                  <Award className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  <span className="text-slate-700">{badge}</span>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className={`w-3 h-3 rounded-full -ml-[26px] ${
+                        day.newBadges > 0 ? 'bg-blue-500' : 'bg-slate-300'
+                      }`}
+                    />
+                    <span className="text-sm font-semibold text-slate-700">
+                      {new Date(day.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="ml-4">
+                    {day.newBadges > 0 ? (
+                      <>
+                        <p className="text-lg font-bold text-blue-600 mb-2">
+                          {day.newBadges} New Badge{day.newBadges > 1 ? 's' : ''} Completed
+                        </p>
+                        <div className="space-y-2">
+                          {day.newBadgeNames.map((badge, badgeIndex) => (
+                            <div
+                              key={badgeIndex}
+                              className="flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-100"
+                            >
+                              <Award className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                              <span className="text-sm text-slate-700">{badge}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                          Total badges: {day.totalBadges}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-slate-600">No new badges completed</p>
+                    )}
+                  </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {gamesList.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Completed Arcade Games</h2>
-            <div className="grid gap-3">
-              {gamesList.map((game, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"
-                >
-                  <TrendingUp className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <span className="text-slate-700">{game}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {history.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-8">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Daily Progress History</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                      Skill Badges
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                      Arcade Games
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((snapshot, index) => (
-                    <tr key={snapshot.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-slate-700">
-                        {new Date(snapshot.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-slate-700">{snapshot.skillBadgesCount}</span>
-                        {index > 0 && (
-                          <span
-                            className={`ml-2 text-sm ${
-                              snapshot.skillBadgesCount - history[index - 1].skillBadgesCount > 0
-                                ? 'text-green-600'
-                                : 'text-slate-400'
-                            }`}
-                          >
-                            {snapshot.skillBadgesCount - history[index - 1].skillBadgesCount > 0
-                              ? `+${snapshot.skillBadgesCount - history[index - 1].skillBadgesCount}`
-                              : ''}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-slate-700">{snapshot.arcadeGamesCount}</span>
-                        {index > 0 && (
-                          <span
-                            className={`ml-2 text-sm ${
-                              snapshot.arcadeGamesCount - history[index - 1].arcadeGamesCount > 0
-                                ? 'text-green-600'
-                                : 'text-slate-400'
-                            }`}
-                          >
-                            {snapshot.arcadeGamesCount - history[index - 1].arcadeGamesCount > 0
-                              ? `+${snapshot.arcadeGamesCount - history[index - 1].arcadeGamesCount}`
-                              : ''}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         )}

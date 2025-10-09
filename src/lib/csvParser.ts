@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { Participant, DailySnapshot } from '../types';
-import { storage } from './storage';
+import { database } from './database';
 
 export interface CsvRow {
   'User Name': string;
@@ -23,11 +23,11 @@ export async function parseCsvFile(
     Papa.parse<CsvRow>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => {
         try {
           const participants: Participant[] = [];
           const snapshots: DailySnapshot[] = [];
-          const existingParticipants = storage.getParticipants();
+          const existingParticipants = await database.getParticipants();
 
           results.data.forEach((row) => {
             if (!row['User Name'] || !row['User Email']) return;

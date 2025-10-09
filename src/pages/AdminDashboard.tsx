@@ -1,35 +1,31 @@
-  const handleDeleteUpload = async (uploadId: string, filename: string, reportDate: string) => {
-    await storage.removeUpload(uploadId, filename, reportDate);
-    // Reload participants and uploads after delete
-    setParticipants(storage.getParticipants());
-    setUploads(storage.getUploads());
-  };
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { storage } from '../lib/storage';
+import { database } from '../lib/database';
 import { parseCsvFile } from '../lib/csvParser';
 import { Participant, CsvUpload } from '../types';
 import {
   LogOut,
   Upload,
   Users,
-  Award,
   TrendingUp,
   Calendar,
   CheckCircle,
-  XCircle,
   Plus,
   X,
   AlertCircle,
   BarChart3,
+  Trash2,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface UploadItem {
   file: File | null;
   date: string;
   id: string;
 }
+
+const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
 
 export function AdminDashboard() {
   const { logout } = useAuth();
@@ -42,14 +38,22 @@ export function AdminDashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setParticipants(storage.getParticipants());
-    setUploads(storage.getUploads());
+  const loadData = async () => {
+    try {
+      const data = await database.getParticipants();
+      setParticipants(data);
+
+      const uploadsData = await database.getUploads();
+      setUploads(uploadsData);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -117,8 +121,13 @@ export function AdminDashboard() {
           reportDate
         );
 
-        storage.setParticipants(updatedParticipants);
-        snapshots.forEach((snapshot) => storage.addSnapshot(snapshot));
+        for (const participant of updatedParticipants) {
+          await database.upsertParticipant(participant);
+        }
+
+        for (const snapshot of snapshots) {
+          await database.addSnapshot(snapshot);
+        }
 
         const upload: CsvUpload = {
           id: `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -127,11 +136,11 @@ export function AdminDashboard() {
           reportDate,
           participantCount: updatedParticipants.length,
         };
-        storage.addUpload(upload);
+        await database.addUpload(upload);
       }
 
       setUploadStatus(`Successfully processed ${validItems.length} file(s)`);
-      loadData();
+      await loadData();
 
       setTimeout(() => {
         setUploadItems([
@@ -146,10 +155,34 @@ export function AdminDashboard() {
     }
   };
 
+  const handleDeleteUpload = async (uploadId: string, reportDate: string) => {
+    if (!confirm('Are you sure you want to delete this upload? All related data will be removed.')) {
+      return;
+    }
+
+    setDeleting(uploadId);
+    try {
+      await database.deleteUpload(uploadId, reportDate);
+      await loadData();
+    } catch (error) {
+      console.error('Failed to delete upload:', error);
+      setError('Failed to delete upload');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const activeParticipants = participants.filter((p) => p.skillBadgesCount > 0);
   const redeemedCount = participants.filter((p) => p.redemptionStatus === 'Yes').length;
-  const totalBadges = participants.reduce((sum, p) => sum + p.skillBadgesCount, 0);
-  const avgBadges = participants.length > 0 ? (totalBadges / participants.length).toFixed(1) : '0';
+
+  const distribution = [
+    { name: '0 badges', value: participants.filter((p) => p.skillBadgesCount === 0).length },
+    { name: '1-2 badges', value: participants.filter((p) => p.skillBadgesCount >= 1 && p.skillBadgesCount <= 2).length },
+    { name: '3-4 badges', value: participants.filter((p) => p.skillBadgesCount >= 3 && p.skillBadgesCount <= 4).length },
+    { name: '5-6 badges', value: participants.filter((p) => p.skillBadgesCount >= 5 && p.skillBadgesCount <= 6).length },
+    { name: '7-8 badges', value: participants.filter((p) => p.skillBadgesCount >= 7 && p.skillBadgesCount <= 8).length },
+    { name: '9+ badges', value: participants.filter((p) => p.skillBadgesCount >= 9).length },
+  ].filter((item) => item.value > 0);
 
   const topPerformers = [...participants]
     .sort((a, b) => b.skillBadgesCount - a.skillBadgesCount)
@@ -214,11 +247,11 @@ export function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                <Award className="w-6 h-6 text-amber-600" />
+                <BarChart3 className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Avg. Skill Badges</p>
-                <p className="text-3xl font-bold text-slate-800">{avgBadges}</p>
+                <p className="text-sm text-slate-600">Total Uploads</p>
+                <p className="text-3xl font-bold text-slate-800">{uploads.length}</p>
               </div>
             </div>
           </div>
@@ -328,7 +361,41 @@ export function AdminDashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <BarChart3 className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold text-slate-800">Badge Distribution</h2>
+            </div>
+            {distribution.length > 0 ? (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={distribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {distribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-center text-slate-600 py-8">
+                No data available. Upload CSV files to see distribution.
+              </p>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <BarChart3 className="w-6 h-6 text-blue-600" />
@@ -365,54 +432,49 @@ export function AdminDashboard() {
               )}
             </div>
           </div>
+        </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Calendar className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-800">Recent Uploads</h2>
-            </div>
-            <div className="space-y-3">
-              {uploads.length > 0 ? (
-                uploads
-                  .sort(
-                    (a, b) =>
-                      new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-                  )
-                  .slice(0, 10)
-                  .map((upload) => (
-                    <div
-                      key={upload.id}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium text-slate-800 text-sm">{upload.filename}</p>
-                        <p className="text-xs text-slate-600">
-                          Report Date: {new Date(upload.reportDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-slate-700">
-                            {upload.participantCount}
-                          </p>
-                          <p className="text-xs text-slate-600">participants</p>
-                        </div>
-                        <button
-                          className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          title="Delete upload"
-                          onClick={() => handleDeleteUpload(upload.id, upload.filename, upload.reportDate)}
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Calendar className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold text-slate-800">Uploaded Files</h2>
+          </div>
+          <div className="space-y-3">
+            {uploads.length > 0 ? (
+              uploads.map((upload) => (
+                <div
+                  key={upload.id}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium text-slate-800 text-sm">{upload.filename}</p>
+                    <p className="text-xs text-slate-600">
+                      Report Date: {new Date(upload.reportDate).toLocaleDateString()} | Uploaded:{' '}
+                      {new Date(upload.uploadDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-slate-700">
+                        {upload.participantCount}
+                      </p>
+                      <p className="text-xs text-slate-600">participants</p>
                     </div>
-                  ))
-              ) : (
-                <p className="text-center text-slate-600 py-8">
-                  No uploads yet. Upload your first CSV file to get started.
-                </p>
-              )}
-            </div>
+                    <button
+                      onClick={() => handleDeleteUpload(upload.id, upload.reportDate)}
+                      disabled={deleting === upload.id}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-slate-600 py-8">
+                No uploads yet. Upload your first CSV file to get started.
+              </p>
+            )}
           </div>
         </div>
       </main>

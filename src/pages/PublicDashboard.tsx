@@ -1,12 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-  // Allow manual reload for live updates after admin deletes
-  const handleReload = () => {
-    loadData();
-  };
 import { useNavigate } from 'react-router-dom';
-import { storage } from '../lib/storage';
+import { database } from '../lib/database';
 import { Participant } from '../types';
-import { Search, TrendingUp, Award, CheckCircle, XCircle, ArrowUpDown } from 'lucide-react';
+import { Search, TrendingUp, Award, CheckCircle, XCircle, ArrowUpDown, ExternalLink } from 'lucide-react';
 
 export function PublicDashboard() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -19,24 +15,25 @@ export function PublicDashboard() {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const data = storage.getParticipants();
-    setParticipants(data);
+  const loadData = async () => {
+    try {
+      const data = await database.getParticipants();
+      setParticipants(data);
 
-    const uploads = storage.getUploads();
-    if (uploads.length > 0) {
-      const latest = uploads.sort((a, b) =>
-        new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-      )[0];
-      setLastUpdated(latest.uploadDate);
+      const uploads = await database.getUploads();
+      if (uploads.length > 0) {
+        const latest = uploads[0];
+        setLastUpdated(latest.uploadDate);
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
     }
   };
 
   const filteredAndSortedParticipants = useMemo(() => {
     let filtered = participants.filter(
       (p) =>
-        p.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
+        p.userName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (sortBy === 'name') {
@@ -54,14 +51,6 @@ export function PublicDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="flex justify-end max-w-7xl mx-auto px-4 pt-4">
-        <button
-          className="px-3 py-1 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 text-sm"
-          onClick={handleReload}
-        >
-          Reload Data
-        </button>
-      </div>
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -87,7 +76,7 @@ export function PublicDashboard() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -151,7 +140,16 @@ export function PublicDashboard() {
                     <h3 className="text-lg font-semibold text-slate-800 mb-1">
                       {participant.userName}
                     </h3>
-                    <p className="text-sm text-slate-600 mb-3">{participant.userEmail}</p>
+                    <a
+                      href={participant.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-3"
+                    >
+                      View Profile
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
 
                     <div className="flex flex-wrap gap-3">
                       <div className="flex items-center gap-2">
