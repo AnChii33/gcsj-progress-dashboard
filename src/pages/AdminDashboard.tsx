@@ -68,6 +68,13 @@ export function AdminDashboard() {
   const [error, setError] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  // NEW: modal state for selected course
+  const [selectedCourse, setSelectedCourse] = useState<{
+    name: string;
+    fullName: string;
+    participants: Participant[];
+  } | null>(null);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -260,17 +267,18 @@ export function AdminDashboard() {
   const arcadeFullName = 'Level 3: Generative AI [Game]';
 
   /**
-   * chartData: compute counts for each course (C1..C19) by scanning participant.skillBadgeNames (pipe-separated),
-   * and for ARC use arcadeGamesCount > 0 as a proxy (since participants in this codebase track arcadeGamesCount).
-   *
-   * Note: matching is done by exact/substring membership in participant.skillBadgeNames entries to be tolerant
-   * of small variations.
+   * chartData: compute counts and also include the actual participant lists for each course (C1..C19) and ARC.
+   * This will let us open a modal with names/emails on bar click.
    */
   const chartData = useMemo(() => {
+    // init arrays
     const courseCounts = new Array(courseFullNames.length).fill(0);
+    const courseParticipantLists: Participant[][] = courseFullNames.map(() => []);
     let arcCount = 0;
+    const arcParticipants: Participant[] = [];
 
     participants.forEach((p) => {
+      // parse the participant's skillBadgeNames (pipe-separated)
       const sbRaw = (p as any).skillBadgeNames || '';
       const badges = String(sbRaw).split('|').map((s) => s.trim()).filter(Boolean);
 
@@ -278,22 +286,30 @@ export function AdminDashboard() {
         const matched = badges.some(b =>
           b === courseName || b.includes(courseName) || courseName.includes(b)
         );
-        if (matched) courseCounts[idx] += 1;
+        if (matched) {
+          courseCounts[idx] += 1;
+          courseParticipantLists[idx].push(p);
+        }
       });
 
-      if ((p.arcadeGamesCount || 0) > 0) arcCount += 1;
+      if ((p.arcadeGamesCount || 0) > 0) {
+        arcCount += 1;
+        arcParticipants.push(p);
+      }
     });
 
     const data = courseFullNames.map((fullName, idx) => ({
       name: `C${idx + 1}`,
       fullName,
       value: courseCounts[idx] || 0,
+      participants: courseParticipantLists[idx] || [],
     }));
 
     data.push({
       name: 'ARC',
       fullName: arcadeFullName,
       value: arcCount,
+      participants: arcParticipants,
     });
 
     return data;
@@ -319,6 +335,20 @@ export function AdminDashboard() {
       </text>
     );
   };
+
+  // Handler when a bar is clicked: payload is the chart entry object
+  const handleBarClick = (payload: any) => {
+    if (!payload || !payload.payload) return;
+    const entry = payload.payload as { name: string; fullName: string; value: number; participants?: Participant[] };
+    setSelectedCourse({
+      name: entry.name,
+      fullName: entry.fullName,
+      participants: entry.participants || [],
+    });
+  };
+
+  // Close modal
+  const closeModal = () => setSelectedCourse(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -521,7 +551,8 @@ export function AdminDashboard() {
                       <BarChart
                         data={chartData}
                         // give more horizontal room (left negative), reduce top/bottom margins
-                        margin={{ top: 50, right: 16, left: 16, bottom: 32 }}
+                        margin={{ top: 8, right: 16, left: -12, bottom: 32 }}
+                        // optional: barCategoryGap="20%"
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
@@ -537,7 +568,16 @@ export function AdminDashboard() {
                         <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
                         <Tooltip />
 
-                        <Bar dataKey="value" barSize={18} isAnimationActive={false}>
+                        {/* Make bars clickable by handling onClick on the Bar. Recharts passes payload and index. */}
+                        <Bar
+                          dataKey="value"
+                          barSize={18}
+                          isAnimationActive={false}
+                          onClick={(payload: any, index: number) => {
+                            // payload contains payload.payload which is the data entry
+                            handleBarClick(payload);
+                          }}
+                        >
                           {chartData.map((entry, idx) => (
                             <Cell key={`barcell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                           ))}
@@ -692,6 +732,65 @@ export function AdminDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Modal: show list of participants for selected course/ARC */}
+      {selectedCourse && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+          <div
+            className="absolute inset-0 bg-black bg-opacity-40"
+            onClick={closeModal}
+            aria-hidden
+          />
+          <div className="relative max-w-3xl w-full bg-white rounded-lg shadow-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">
+                  {selectedCourse.name} — {selectedCourse.fullName}
+                </h3>
+                <p className="text-xs text-slate-600">
+                  {selectedCourse.participants.length} participant{selectedCourse.participants.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 rounded hover:bg-slate-100 text-slate-600"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-auto p-4">
+              {selectedCourse.participants.length === 0 ? (
+                <div className="text-center text-sm text-slate-600 py-8">No participants found.</div>
+              ) : (
+                <ul className="space-y-2">
+                  {selectedCourse.participants.map((p) => (
+                    <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-medium text-slate-800 truncate">{p.userName}</div>
+                          <div className="text-xs text-slate-600 truncate">{p.userEmail}</div>
+                        </div>
+                        <div className="text-xs text-slate-500">{p.skillBadgesCount} badges</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="p-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                onClick={closeModal}
+                className="px-3 py-1 bg-slate-100 rounded text-sm text-slate-700 hover:bg-slate-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
