@@ -760,7 +760,7 @@ export function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={chartData}
-                        margin={{ top: 8, right: 16, left: -12, bottom: 32 }}
+                        margin={{ top: 8, right: 16, left: 16, bottom: 32 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
