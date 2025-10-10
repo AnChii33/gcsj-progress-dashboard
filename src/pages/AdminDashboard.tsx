@@ -164,15 +164,26 @@ export function AdminDashboard() {
       let errorMessage = 'Failed to process CSV files';
       
       if (err instanceof Error) {
-        // If it's a Supabase error with details
+        errorMessage = err.message;
+        
+        // Check for specific Supabase errors
         const supabaseError = (err as any)?.error;
         if (supabaseError) {
-          errorMessage = `Database error: ${supabaseError.message || supabaseError}`;
-        } else {
-          // Regular Error object
-          errorMessage = err.message;
+          if (supabaseError.code === '23505') {
+            errorMessage = 'Duplicate entry detected. This data may have already been uploaded.';
+          } else if (supabaseError.code === '23503') {
+            errorMessage = 'Database constraint violation. Please check your data format.';
+          } else {
+            errorMessage = `Database error: ${supabaseError.message || supabaseError}`;
+          }
         }
       }
+      
+      setError(errorMessage);
+      setUploadStatus('');
+    } finally {
+      setUploading(false);
+    }
       
       // Set a user-friendly error message
       setError(errorMessage);
