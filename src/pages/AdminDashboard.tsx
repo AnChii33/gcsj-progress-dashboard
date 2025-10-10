@@ -742,7 +742,7 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="48%"
+                    cy="49%"
                     labelLine={false}
                     outerRadius={220} // Increased radius
                     fill="#8884d8"
