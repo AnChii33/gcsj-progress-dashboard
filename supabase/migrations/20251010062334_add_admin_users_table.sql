@@ -6,7 +6,6 @@
       - `id` (uuid, primary key)
       - `email` (text, unique)
       - `password` (text) - Note: In production, this should be hashed
-      - `role` (text, default 'admin')
       - `created_at` (timestamptz)
       - `updated_at` (timestamptz)
 
@@ -16,7 +15,6 @@
 
   3. Initial Data
     - Insert default admin user with email: admin@stcet.edu.in
-    - Insert default core team user with email: coreteam@stcet.edu.in
 */
 
 -- Create admin_users table
@@ -24,7 +22,6 @@ CREATE TABLE IF NOT EXISTS admin_users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text UNIQUE NOT NULL,
   password text NOT NULL,
-  role text NOT NULL DEFAULT 'admin',
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -55,11 +52,6 @@ CREATE POLICY "Allow public insert access to admin users"
   WITH CHECK (true);
 
 -- Insert default admin user if not exists
-INSERT INTO admin_users (email, password, role)
-VALUES ('admin@stcet.edu.in', 'AdminSTCET2024!', 'admin')
-ON CONFLICT (email) DO NOTHING;
-
--- Insert default core team user if not exists
-INSERT INTO admin_users (email, password, role)
-VALUES ('coreteam@stcet.edu.in', 'CoreTeamSTCET2024!', 'core_team')
+INSERT INTO admin_users (email, password)
+VALUES ('admin@stcet.edu.in', 'AdminSTCET2024!')
 ON CONFLICT (email) DO NOTHING;
