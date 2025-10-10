@@ -159,7 +159,7 @@ export function AdminDashboard() {
         ]);
         setUploadStatus('');
       }, 3000);
-    } catch (err) {
+} catch (err) {
       console.error('CSV processing error:', err);
       let errorMessage = 'Failed to process CSV files';
       
@@ -179,13 +179,6 @@ export function AdminDashboard() {
         }
       }
       
-      setError(errorMessage);
-      setUploadStatus('');
-    } finally {
-      setUploading(false);
-    }
-      
-      // Set a user-friendly error message
       setError(errorMessage);
       setUploadStatus('');
     } finally {
