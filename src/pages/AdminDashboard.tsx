@@ -68,10 +68,16 @@ export function AdminDashboard() {
   const [error, setError] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // NEW: modal state for selected course
+  // Modal state for bar (courses) and pie groups
   const [selectedCourse, setSelectedCourse] = useState<{
     name: string;
     fullName: string;
+    participants: Participant[];
+  } | null>(null);
+
+  const [selectedGroup, setSelectedGroup] = useState<{
+    name: string;
+    description?: string;
     participants: Participant[];
   } | null>(null);
 
@@ -234,14 +240,35 @@ export function AdminDashboard() {
     (p) => (p.skillBadgesCount || 0) >= 19 && (p.arcadeGamesCount || 0) >= 1
   ).length;
 
-  // Updated badge distribution groups
-  const distribution = [
-    { name: '0 badges', value: participants.filter((p) => p.skillBadgesCount === 0).length },
-    { name: '1-5 badges', value: participants.filter((p) => p.skillBadgesCount >= 1 && p.skillBadgesCount <= 5).length },
-    { name: '6-10 badges', value: participants.filter((p) => p.skillBadgesCount >= 6 && p.skillBadgesCount <= 10).length },
-    { name: '11-15 badges', value: participants.filter((p) => p.skillBadgesCount >= 11 && p.skillBadgesCount <= 15).length },
-    { name: '15+ badges', value: participants.filter((p) => p.skillBadgesCount > 15).length },
-  ].filter((item) => item.value > 0);
+  // Updated badge distribution groups with participant lists
+  const distributionDetailed = useMemo(() => {
+    const groups: {
+      name: string;
+      description?: string;
+      participants: Participant[];
+    }[] = [
+      { name: '0 badges', description: '0 badges', participants: [] },
+      { name: '1-5 badges', description: '1-5 badges', participants: [] },
+      { name: '6-10 badges', description: '6-10 badges', participants: [] },
+      { name: '11-15 badges', description: '11-15 badges', participants: [] },
+      { name: '15+ badges', description: '15+ badges', participants: [] },
+    ];
+
+    participants.forEach((p) => {
+      const count = p.skillBadgesCount || 0;
+      if (count === 0) groups[0].participants.push(p);
+      else if (count >= 1 && count <= 5) groups[1].participants.push(p);
+      else if (count >= 6 && count <= 10) groups[2].participants.push(p);
+      else if (count >= 11 && count <= 15) groups[3].participants.push(p);
+      else if (count > 15) groups[4].participants.push(p);
+    });
+
+    return groups.map((g) => ({ name: g.name, description: g.description, participants: g.participants }));
+  }, [participants]);
+
+  const distribution = distributionDetailed
+    .map((g) => ({ name: g.name, value: g.participants.length }))
+    .filter((item) => item.value > 0);
 
   // Sort participants by badges (descending) for top performers and all participants list
   const sortedParticipants = [...participants].sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
@@ -383,8 +410,22 @@ export function AdminDashboard() {
     }
   };
 
+  // Pie click handler: receives group's index or object
+  const handlePieClick = (groupName: string) => {
+    const group = distributionDetailed.find((g) => g.name === groupName);
+    if (!group) return;
+    setSelectedGroup({
+      name: group.name,
+      description: group.description,
+      participants: group.participants,
+    });
+  };
+
   // Close modal
-  const closeModal = () => setSelectedCourse(null);
+  const closeModal = () => {
+    setSelectedCourse(null);
+    setSelectedGroup(null);
+  };
 
   // Tier targets
   const tiers = [
@@ -437,8 +478,8 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top area: make 5 columns on md: three small cards + wide tier card */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 items-start">
+        {/* Top area: three small cards only */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-start">
           {/* Small card: Total Participants (small) */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -471,35 +512,35 @@ export function AdminDashboard() {
               <p className="text-xl font-bold text-slate-800">{uploads.length}</p>
             </div>
           </div>
+        </div>
 
-          {/* Tier progress card (wide) spans 2 cols on md+ */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:col-span-2">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">Tier Progress (Full Completions)</h3>
-                <p className="text-xs text-slate-600 mt-1">Participants who completed all 19 badges + arcade</p>
-              </div>
-              <div className="text-sm font-medium text-slate-700">{fullCompletions} completed</div>
+        {/* Tier progress card: full width below summary cards */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Tier Progress (Full Completions)</h3>
+              <p className="text-xs text-slate-600 mt-1">Participants who completed all 19 badges + arcade</p>
             </div>
+            <div className="text-sm font-medium text-slate-700">{fullCompletions} completed</div>
+          </div>
 
-            {/* Vertical stack of three progress bars */}
-            <div className="space-y-4">
-              {tierProgress.map((t) => (
-                <div key={t.id}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-xs font-medium text-slate-700">{t.title}</div>
-                    <div className="text-xs text-slate-600">{t.percent}%</div>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 rounded overflow-hidden">
-                    <div
-                      className={`${t.color} h-full rounded`}
-                      style={{ width: `${t.percent}%` }}
-                    />
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-1">Target: {t.target} full completions</div>
+          {/* Vertical stack of three progress bars */}
+          <div className="space-y-4 max-w-4xl">
+            {tierProgress.map((t) => (
+              <div key={t.id}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-sm font-medium text-slate-700">{t.title}</div>
+                  <div className="text-sm text-slate-600">{t.percent}%</div>
                 </div>
-              ))}
-            </div>
+                <div className="w-full h-4 bg-slate-100 rounded overflow-hidden">
+                  <div
+                    className={`${t.color} h-full rounded`}
+                    style={{ width: `${t.percent}%` }}
+                  />
+                </div>
+                <div className="text-[12px] text-slate-500 mt-1">Target: {t.target} full completions</div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -611,9 +652,20 @@ export function AdminDashboard() {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
+                        // simple cursor on pie
+                        onClick={(data, index) => {
+                          // data is the payload; find group name by index
+                          const groupName = distribution[index]?.name;
+                          if (groupName) handlePieClick(groupName);
+                        }}
                       >
                         {distribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handlePieClick(entry.name)}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -815,8 +867,8 @@ export function AdminDashboard() {
         </div>
       </main>
 
-      {/* Modal: show list of participants for selected course/ARC */}
-      {selectedCourse && (
+      {/* Modal: show list of participants for selected course/ARC or pie group */}
+      {(selectedCourse || selectedGroup) && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
           <div
             className="absolute inset-0 bg-black bg-opacity-40"
@@ -827,10 +879,12 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between p-4 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">
-                  {selectedCourse.name} — {selectedCourse.fullName}
+                  {selectedCourse ? `${selectedCourse.name} — ${selectedCourse.fullName}` : `${selectedGroup?.name}`}
                 </h3>
                 <p className="text-xs text-slate-600">
-                  {selectedCourse.participants.length} participant{selectedCourse.participants.length !== 1 ? 's' : ''}
+                  {selectedCourse
+                    ? `${selectedCourse.participants.length} participant${selectedCourse.participants.length !== 1 ? 's' : ''}`
+                    : `${selectedGroup?.participants.length ?? 0} participant${(selectedGroup?.participants.length ?? 0) !== 1 ? 's' : ''}`}
                 </p>
               </div>
               <button
@@ -843,11 +897,11 @@ export function AdminDashboard() {
             </div>
 
             <div className="max-h-[60vh] overflow-auto p-4">
-              {selectedCourse.participants.length === 0 ? (
+              {((selectedCourse && selectedCourse.participants.length === 0) || (selectedGroup && selectedGroup.participants.length === 0)) ? (
                 <div className="text-center text-sm text-slate-600 py-8">No participants found.</div>
               ) : (
                 <ul className="space-y-2">
-                  {selectedCourse.participants.map((p) => (
+                  {(selectedCourse ? selectedCourse.participants : selectedGroup?.participants || []).map((p) => (
                     <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
                       <div className="flex items-center justify-between gap-4">
                         <div>
