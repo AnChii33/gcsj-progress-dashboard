@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, AlertCircle, CheckCircle, Users } from 'lucide-react';
 
 export function AdminSettings() {
-  const { currentAdminEmail, changeCredentials, logout } = useAuth();
+  const { currentAdminEmail, changeCredentials, getCoreTeamCredentials, updateCoreTeamCredentials } = useAuth();
   const navigate = useNavigate();
   const [newEmail, setNewEmail] = useState(currentAdminEmail || '');
   const [newPassword, setNewPassword] = useState('');
@@ -12,6 +12,24 @@ export function AdminSettings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [coreTeamEmail, setCoreTeamEmail] = useState('');
+  const [newCoreTeamEmail, setNewCoreTeamEmail] = useState('');
+  const [newCoreTeamPassword, setNewCoreTeamPassword] = useState('');
+  const [coreTeamError, setCoreTeamError] = useState('');
+  const [coreTeamSuccess, setCoreTeamSuccess] = useState(false);
+  const [coreTeamLoading, setCoreTeamLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCoreTeamCreds = async () => {
+      const creds = await getCoreTeamCredentials();
+      if (creds) {
+        setCoreTeamEmail(creds.email);
+        setNewCoreTeamEmail(creds.email);
+      }
+    };
+    fetchCoreTeamCreds();
+  }, [getCoreTeamCredentials]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +79,49 @@ export function AdminSettings() {
     setLoading(false);
   };
 
+  const handleCoreTeamSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCoreTeamError('');
+    setCoreTeamSuccess(false);
+
+    if (!newCoreTeamEmail.trim()) {
+      setCoreTeamError('Email is required');
+      return;
+    }
+
+    if (!newCoreTeamPassword) {
+      setCoreTeamError('Password is required');
+      return;
+    }
+
+    if (newCoreTeamPassword.length < 8) {
+      setCoreTeamError('Password must be at least 8 characters long');
+      return;
+    }
+
+    setCoreTeamLoading(true);
+
+    const result = await updateCoreTeamCredentials(
+      coreTeamEmail,
+      newCoreTeamEmail.trim(),
+      newCoreTeamPassword
+    );
+
+    if (result) {
+      setCoreTeamSuccess(true);
+      setNewCoreTeamPassword('');
+      setCoreTeamEmail(newCoreTeamEmail.trim());
+
+      setTimeout(() => {
+        setCoreTeamSuccess(false);
+      }, 3000);
+    } else {
+      setCoreTeamError('Failed to update Core Team credentials. Please try again.');
+    }
+
+    setCoreTeamLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <header className="bg-white shadow-sm border-b border-slate-200">
@@ -75,14 +136,14 @@ export function AdminSettings() {
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Admin Settings</h1>
             <p className="text-sm text-slate-600 mt-1">
-              Update your admin credentials
+              Update your admin and core team credentials
             </p>
           </div>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
           <div className="mb-6">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
@@ -202,6 +263,80 @@ export function AdminSettings() {
               The new credentials will be required for your next login.
             </p>
           </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+          <div className="mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+              <Users className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Change Core Team Credentials</h2>
+            <p className="text-slate-600 text-sm">
+              Update the email and password for the Core Team user role.
+            </p>
+          </div>
+
+          <form onSubmit={handleCoreTeamSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="core-team-email" className="block text-sm font-medium text-slate-700 mb-2">
+                New Core Team Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  id="core-team-email"
+                  type="email"
+                  value={newCoreTeamEmail}
+                  onChange={(e) => setNewCoreTeamEmail(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                  placeholder="coreteam@stcet.edu.in"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="core-team-password" className="block text-sm font-medium text-slate-700 mb-2">
+                New Core Team Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  id="core-team-password"
+                  type="password"
+                  value={newCoreTeamPassword}
+                  onChange={(e) => setNewCoreTeamPassword(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                  placeholder="Enter new password (min 8 characters)"
+                  required
+                />
+              </div>
+            </div>
+
+            {coreTeamError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{coreTeamError}</span>
+              </div>
+            )}
+
+            {coreTeamSuccess && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">Core Team credentials updated successfully!</span>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={coreTeamLoading}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {coreTeamLoading ? 'Updating...' : 'Update Core Team Credentials'}
+              </button>
+            </div>
+          </form>
         </div>
       </main>
     </div>
