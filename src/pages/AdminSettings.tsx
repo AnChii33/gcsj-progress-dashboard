@@ -13,7 +13,6 @@ export function AdminSettings() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const [coreTeamEmail, setCoreTeamEmail] = useState('');
   const [newCoreTeamEmail, setNewCoreTeamEmail] = useState('');
   const [newCoreTeamPassword, setNewCoreTeamPassword] = useState('');
   const [coreTeamError, setCoreTeamError] = useState('');
@@ -24,7 +23,6 @@ export function AdminSettings() {
     const fetchCoreTeamCreds = async () => {
       const creds = await getCoreTeamCredentials();
       if (creds) {
-        setCoreTeamEmail(creds.email);
         setNewCoreTeamEmail(creds.email);
       }
     };
@@ -102,7 +100,6 @@ export function AdminSettings() {
     setCoreTeamLoading(true);
 
     const result = await updateCoreTeamCredentials(
-      coreTeamEmail,
       newCoreTeamEmail.trim(),
       newCoreTeamPassword
     );
@@ -110,7 +107,6 @@ export function AdminSettings() {
     if (result) {
       setCoreTeamSuccess(true);
       setNewCoreTeamPassword('');
-      setCoreTeamEmail(newCoreTeamEmail.trim());
 
       setTimeout(() => {
         setCoreTeamSuccess(false);
