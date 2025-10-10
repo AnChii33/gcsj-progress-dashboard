@@ -220,28 +220,28 @@ export function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
-              <p className="text-sm text-slate-600 mt-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Admin Dashboard</h1>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
                 Manage progress tracking and analytics
               </p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/')}
-                className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
+                className="px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
               >
                 View Public Dashboard
               </button>
               <button
                 onClick={() => navigate('/admin/settings')}
-                className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
+                className="flex items-center gap-2 px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
               >
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition"
+                className="flex items-center gap-2 px-3 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-xs sm:text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -259,8 +259,8 @@ export function AdminDashboard() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Participants</p>
-                <p className="text-3xl font-bold text-slate-800">{participants.length}</p>
+                <p className="text-xs sm:text-sm text-slate-600">Total Participants</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{participants.length}</p>
               </div>
             </div>
           </div>
@@ -271,8 +271,8 @@ export function AdminDashboard() {
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Active Participants</p>
-                <p className="text-3xl font-bold text-slate-800">{activeParticipants.length}</p>
+                <p className="text-xs sm:text-sm text-slate-600">Active Participants</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{activeParticipants.length}</p>
               </div>
             </div>
           </div>
@@ -283,8 +283,8 @@ export function AdminDashboard() {
                 <BarChart3 className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Uploads</p>
-                <p className="text-3xl font-bold text-slate-800">{uploads.length}</p>
+                <p className="text-xs sm:text-sm text-slate-600">Total Uploads</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{uploads.length}</p>
               </div>
             </div>
           </div>
@@ -293,14 +293,14 @@ export function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <Upload className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">Upload CSV Files</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800">Upload CSV Files</h2>
           </div>
 
           <div className="space-y-4 mb-6">
             {uploadItems.map((item, index) => (
               <div key={item.id} className="flex gap-4 items-start">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-2">
                     CSV File {index + 1}
                   </label>
                   <input
@@ -309,19 +309,19 @@ export function AdminDashboard() {
                     onChange={(e) =>
                       handleFileChange(item.id, e.target.files?.[0] || null)
                     }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
 
-                <div className="w-48">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                <div className="w-44 sm:w-48">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-2">
                     Upload Date
                   </label>
                   <input
                     type="date"
                     value={item.date}
                     onChange={(e) => handleDateChange(item.id, e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
 
@@ -340,7 +340,7 @@ export function AdminDashboard() {
           <div className="flex gap-3 mb-4">
             <button
               onClick={handleAddUploadItem}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-xs sm:text-sm"
             >
               <Plus className="w-4 h-4" />
               Add More Files
@@ -349,28 +349,28 @@ export function AdminDashboard() {
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
             >
               <Upload className="w-4 h-4" />
               {uploading ? 'Processing...' : 'Upload & Process'}
             </button>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs sm:text-sm text-blue-800">
             <strong>Note:</strong> The CSV file uploaded with a specific date represents progress until the
             previous day midnight. For example, uploading with date Oct 8 means the data reflects progress
             up to Oct 7 midnight.
           </div>
 
           {uploadStatus && (
-            <div className="mt-4 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+            <div className="mt-4 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs sm:text-sm">
               <CheckCircle className="w-5 h-5 flex-shrink-0" />
               <span>{uploadStatus}</span>
             </div>
           )}
 
           {error && (
-            <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs sm:text-sm">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -381,10 +381,10 @@ export function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <BarChart3 className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-800">Badge Distribution</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800">Badge Distribution</h2>
             </div>
             {distribution.length > 0 ? (
-              <div className="h-80">
+              <div className="h-72 sm:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -392,7 +392,7 @@ export function AdminDashboard() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      outerRadius={100}
+                      outerRadius={90}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -401,12 +401,12 @@ export function AdminDashboard() {
                       ))}
                     </Pie>
                     <Tooltip />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="text-center text-slate-600 py-8">
+              <p className="text-center text-slate-600 py-8 text-xs sm:text-sm">
                 No data available. Upload CSV files to see distribution.
               </p>
             )}
@@ -415,7 +415,7 @@ export function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-800">Top 10 Performers</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800">Top 10 Performers</h2>
             </div>
             <div className="space-y-3">
               {topPerformers.length > 0 ? (
@@ -425,24 +425,24 @@ export function AdminDashboard() {
                     className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-slate-400 w-6">
+                      <span className="text-base sm:text-lg font-bold text-slate-400 w-6">
                         {index + 1}
                       </span>
                       <div>
-                        <p className="font-medium text-slate-800">{participant.userName}</p>
-                        <p className="text-xs text-slate-600">{participant.userEmail}</p>
+                        <p className="font-medium text-slate-800 text-sm sm:text-base">{participant.userName}</p>
+                        <p className="text-xs sm:text-sm text-slate-600">{participant.userEmail}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-blue-600">
+                      <p className="text-base sm:text-lg font-bold text-blue-600">
                         {participant.skillBadgesCount}
                       </p>
-                      <p className="text-xs text-slate-600">badges</p>
+                      <p className="text-xs sm:text-sm text-slate-600">badges</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-slate-600 py-8">
+                <p className="text-center text-slate-600 py-8 text-xs sm:text-sm">
                   No data available. Upload CSV files to see top performers.
                 </p>
               )}
@@ -453,33 +453,33 @@ export function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">All Participants (Sorted by Badges)</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800">All Participants (Sorted by Badges)</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Rank</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Skill Badges</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Arcade Games</th>
+                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-slate-700">Rank</th>
+                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-slate-700">Name</th>
+                  <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-slate-700">Email</th>
+                  <th className="text-center py-3 px-4 text-xs sm:text-sm font-semibold text-slate-700">Skill Badges</th>
+                  <th className="text-center py-3 px-4 text-xs sm:text-sm font-semibold text-slate-700">Arcade Games</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedParticipants.length > 0 ? (
                   sortedParticipants.map((participant, index) => (
                     <tr key={participant.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-sm text-slate-600">{index + 1}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-slate-800">{participant.userName}</td>
-                      <td className="py-3 px-4 text-sm text-slate-600">{participant.userEmail}</td>
-                      <td className="py-3 px-4 text-sm text-center font-bold text-blue-600">{participant.skillBadgesCount}</td>
-                      <td className="py-3 px-4 text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
+                      <td className="py-3 px-4 text-xs sm:text-sm text-slate-600">{index + 1}</td>
+                      <td className="py-3 px-4 text-xs sm:text-sm font-medium text-slate-800">{participant.userName}</td>
+                      <td className="py-3 px-4 text-xs sm:text-sm text-slate-600">{participant.userEmail}</td>
+                      <td className="py-3 px-4 text-xs sm:text-sm text-center font-bold text-blue-600">{participant.skillBadgesCount}</td>
+                      <td className="py-3 px-4 text-xs sm:text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-600">
+                    <td colSpan={5} className="py-8 text-center text-slate-600 text-xs sm:text-sm">
                       No participants yet. Upload CSV files to get started.
                     </td>
                   </tr>
@@ -492,7 +492,7 @@ export function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <Calendar className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">Uploaded Files</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800">Uploaded Files</h2>
           </div>
           <div className="space-y-3">
             {uploads.length > 0 ? (
@@ -502,18 +502,18 @@ export function AdminDashboard() {
                   className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                 >
                   <div>
-                    <p className="font-medium text-slate-800 text-sm">{upload.filename}</p>
-                    <p className="text-xs text-slate-600">
+                    <p className="font-medium text-slate-800 text-xs sm:text-sm">{upload.filename}</p>
+                    <p className="text-xs sm:text-sm text-slate-600">
                       Report Date: {new Date(upload.reportDate).toLocaleDateString()} | Uploaded:{' '}
                       {new Date(upload.uploadDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-700">
+                      <p className="text-sm sm:text-base font-medium text-slate-700">
                         {upload.participantCount}
                       </p>
-                      <p className="text-xs text-slate-600">participants</p>
+                      <p className="text-xs sm:text-sm text-slate-600">participants</p>
                     </div>
                     <button
                       onClick={() => handleDeleteUpload(upload.id, upload.reportDate)}
@@ -526,7 +526,7 @@ export function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-600 py-8">
+              <p className="text-center text-slate-600 py-8 text-xs sm:text-sm">
                 No uploads yet. Upload your first CSV file to get started.
               </p>
             )}
@@ -536,6 +536,3 @@ export function AdminDashboard() {
     </div>
     );
 }
-
-
-    
