@@ -223,14 +223,14 @@ export function ParticipantDetail() {
             <Icon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className={`text-lg sm:text-xl font-bold ${colors.text} mb-2`}>
+            <h3 className={`text-xl font-bold ${colors.text} mb-2`}>
               {milestone.title}
             </h3>
-            <p className={`${colors.subtext} mb-2 text-sm`}>
+            <p className={`${colors.subtext} mb-2`}>
               {milestone.message}
             </p>
             {milestone.action && (
-              <p className={`text-xs sm:text-sm ${colors.subtext}`}>
+              <p className={`text-sm ${colors.subtext}`}>
                 {milestone.action}
               </p>
             )}
@@ -259,17 +259,17 @@ export function ParticipantDetail() {
             }`}
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm sm:text-base">Back to Dashboard</span>
+            <span>Back to Dashboard</span>
           </button>
 
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className={`text-2xl sm:text-3xl font-bold ${getHeaderTextColor()}`}>
+                <h1 className={`text-3xl font-bold ${getHeaderTextColor()}`}>
                   {participant.userName}
                 </h1>
                 {milestone.isHighlighted && (
-                  <div className="flex items-center gap-1 px-3 py-1 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-full text-xs sm:text-sm font-bold">
+                  <div className="flex items-center gap-1 px-3 py-1 bg-white bg-opacity-20 backdrop-blur-sm text-white rounded-full text-sm font-bold">
                     <Icon className="w-4 h-4" />
                     {milestone.type === 'complete' && 'FULLY COMPLETED'}
                     {milestone.type === 'badges-complete' && 'ALL BADGES DONE'}
@@ -279,14 +279,14 @@ export function ParticipantDetail() {
                   </div>
                 )}
               </div>
-              <p className={`mb-2 text-sm sm:text-base ${milestone.isHighlighted ? 'text-white text-opacity-90' : 'text-slate-600'}`}>
+              <p className={`mb-2 ${milestone.isHighlighted ? 'text-white text-opacity-90' : 'text-slate-600'}`}>
                 {participant.userEmail}
               </p>
               <a
                 href={participant.profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 text-xs sm:text-sm font-medium ${
+                className={`inline-flex items-center gap-2 text-sm font-medium ${
                   milestone.isHighlighted
                     ? 'text-white hover:text-gray-100' 
                     : 'text-blue-600 hover:text-blue-700'
@@ -303,17 +303,17 @@ export function ParticipantDetail() {
                   milestone.isHighlighted ? 'text-white' : 'text-green-600'
                 }`}>
                   <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm sm:text-base font-medium">Access Code Redeemed</span>
+                  <span className="font-medium">Access Code Redeemed</span>
                 </div>
               ) : (
                 <div className={`flex items-center gap-2 ${
                   milestone.isHighlighted ? 'text-white text-opacity-90' : 'text-amber-600'
                 }`}>
                   <XCircle className="w-5 h-5" />
-                  <span className="text-sm sm:text-base font-medium">Access Code Not Redeemed</span>
+                  <span className="font-medium">Access Code Not Redeemed</span>
                 </div>
               )}
-              <span className={`text-xs sm:text-sm ${
+              <span className={`text-sm ${
                 milestone.isHighlighted ? 'text-white text-opacity-75' : 'text-slate-500'
               }`}>
                 {participant.profileStatus}
@@ -334,7 +334,7 @@ export function ParticipantDetail() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Skill Badges</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{participant.skillBadgesCount}</p>
+                <p className="text-3xl font-bold text-slate-800">{participant.skillBadgesCount}</p>
               </div>
             </div>
           </div>
@@ -346,7 +346,7 @@ export function ParticipantDetail() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Arcade Games</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{participant.arcadeGamesCount}</p>
+                <p className="text-3xl font-bold text-slate-800">{participant.arcadeGamesCount}</p>
               </div>
             </div>
           </div>
@@ -358,7 +358,7 @@ export function ParticipantDetail() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Total Progress</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">
+                <p className="text-3xl font-bold text-slate-800">
                   {progressChange >= 0 ? '+' : ''}
                   {progressChange}
                 </p>
@@ -369,7 +369,7 @@ export function ParticipantDetail() {
 
         {history.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-6">Day-Wise Progress Timeline</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-6">Day-Wise Progress Timeline</h2>
             <div className="space-y-4">
               {timelineData.map((day, index) => (
                 <div
@@ -384,7 +384,7 @@ export function ParticipantDetail() {
                         day.newBadges > 0 ? 'bg-blue-500' : 'bg-slate-300'
                       }`}
                     />
-                    <span className="text-xs sm:text-sm font-semibold text-slate-700">
+                    <span className="text-sm font-semibold text-slate-700">
                       {new Date(day.date).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
@@ -396,7 +396,7 @@ export function ParticipantDetail() {
                   <div className="ml-4">
                     {day.newBadges > 0 ? (
                       <>
-                        <p className="text-base sm:text-lg font-bold text-blue-600 mb-2">
+                        <p className="text-lg font-bold text-blue-600 mb-2">
                           {day.newBadges} New Badge{day.newBadges > 1 ? 's' : ''} Completed
                         </p>
                         <div className="space-y-2">
@@ -406,7 +406,7 @@ export function ParticipantDetail() {
                               className="flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-100"
                             >
                               <Award className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                              <span className="text-xs sm:text-sm text-slate-700">{badge}</span>
+                              <span className="text-sm text-slate-700">{badge}</span>
                             </div>
                           ))}
                         </div>
@@ -415,7 +415,7 @@ export function ParticipantDetail() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-sm text-slate-600">No new badges complete</p>
+                      <p className="text-slate-600">No new badges complete</p>
                     )}
                   </div>
                 </div>

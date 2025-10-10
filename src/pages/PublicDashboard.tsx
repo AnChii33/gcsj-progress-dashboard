@@ -74,16 +74,13 @@ export function PublicDashboard() {
     return 'border border-slate-200';
   };
 
-  // VERY SMALL badge styling for mobile by default (text + padding + icon)
-  const baseBadgeClass = 'flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-bold';
-
   const getCompletionBadge = (participant: Participant) => {
     const badges = participant.skillBadgesCount;
     const arcade = participant.arcadeGamesCount;
 
     if (badges >= 19 && arcade >= 1) {
       return (
-        <div className={`${baseBadgeClass} bg-green-600 text-white`}>
+        <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-xs font-bold">
           <Trophy className="w-3 h-3" />
           FULLY COMPLETED
         </div>
@@ -91,7 +88,7 @@ export function PublicDashboard() {
     }
     if (badges >= 19) {
       return (
-        <div className={`${baseBadgeClass} bg-amber-600 text-white`}>
+        <div className="flex items-center gap-1 px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-bold">
           <Award className="w-3 h-3" />
           ALL BADGES DONE
         </div>
@@ -99,7 +96,7 @@ export function PublicDashboard() {
     }
     if (badges >= 15 && badges <= 18) {
       return (
-        <div className={`${baseBadgeClass} bg-purple-600 text-white`}>
+        <div className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-full text-xs font-bold">
           <Star className="w-3 h-3" />
           ALMOST THERE
         </div>
@@ -107,7 +104,7 @@ export function PublicDashboard() {
     }
     if (badges >= 10 && badges <= 14) {
       return (
-        <div className={`${baseBadgeClass} bg-blue-600 text-white`}>
+        <div className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
           <Zap className="w-3 h-3" />
           GREAT PROGRESS
         </div>
@@ -115,7 +112,7 @@ export function PublicDashboard() {
     }
     if (badges >= 5 && badges <= 9) {
       return (
-        <div className={`${baseBadgeClass} bg-cyan-600 text-white`}>
+        <div className="flex items-center gap-1 px-3 py-1 bg-cyan-600 text-white rounded-full text-xs font-bold">
           <Target className="w-3 h-3" />
           GOOD START
         </div>
@@ -127,17 +124,17 @@ export function PublicDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+              <h1 className="text-3xl font-bold text-slate-800">
                 Google Cloud Study Jam Progress
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">
+              <p className="text-slate-600 mt-1">
                 St. Thomas' College of Engineering & Technology - Kolkata, 2025-26
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-600">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
               <TrendingUp className="w-4 h-4" />
               <span>{participants.length} Participants</span>
             </div>
@@ -145,50 +142,50 @@ export function PublicDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="mb-5">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xs sm:text-sm"
+              className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
         </div>
 
         {lastUpdated && (
-          <div className="mb-4 text-center text-xs sm:text-sm text-slate-600">
+          <div className="mb-6 text-center text-sm text-slate-600">
             Last updated: {new Date(lastUpdated).toLocaleString()}
           </div>
         )}
 
         {filteredParticipants.length === 0 ? (
-          <div className="text-center py-12">
-            <Award className="w-14 h-14 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base sm:text-lg font-semibold text-slate-700 mb-1">
+          <div className="text-center py-16">
+            <Award className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">
               {participants.length === 0 ? 'No Data Available' : 'No Results Found'}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600">
+            <p className="text-slate-600">
               {participants.length === 0
                 ? 'Upload CSV data from the admin portal to get started'
                 : 'Try adjusting your search criteria'}
             </p>
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             {filteredParticipants.map((participant) => (
               <div
                 key={participant.id}
                 onClick={() => handleParticipantClick(participant.id)}
-                className={`bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer p-4 sm:p-6 ${getParticipantCardStyle(participant)}`}
+                className={`bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer p-6 ${getParticipantCardStyle(participant)}`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm sm:text-base font-semibold text-slate-800">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-semibold text-slate-800">
                         {participant.userName}
                       </h3>
                       {getCompletionBadge(participant)}
@@ -198,29 +195,29 @@ export function PublicDashboard() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-600 hover:text-blue-700 mb-2"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-3"
                     >
                       View Profile
                       <ExternalLink className="w-3 h-3" />
                     </a>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       <div className="flex items-center gap-2">
                         <Award className="w-4 h-4 text-blue-600" />
-                        <span className="text-xs sm:text-sm font-medium text-slate-700">
+                        <span className="text-sm font-medium text-slate-700">
                           {participant.skillBadgesCount} Skill Badges
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-green-600" />
-                        <span className="text-xs sm:text-sm font-medium text-slate-700">
+                        <span className="text-sm font-medium text-slate-700">
                           {participant.arcadeGamesCount} Arcade Games
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-2">
                     {participant.redemptionStatus === 'Yes' ? (
                       <div className="flex items-center gap-1 text-green-600">
                         <CheckCircle className="w-4 h-4" />
