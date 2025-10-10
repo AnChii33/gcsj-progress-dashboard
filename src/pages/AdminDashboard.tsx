@@ -28,7 +28,6 @@ import {
   Cell,
   ResponsiveContainer,
   Legend,
-  Tooltip,
   BarChart,
   Bar,
   XAxis,
@@ -45,9 +44,7 @@ interface UploadItem {
 
 const COLORS = [
   '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
-  '#ec4899', '#f97316', '#06b6d4', '#84cc16', '#7c3aed',
-  '#0ea5a4', '#ef5350', '#fbbf24', '#34d399', '#60a5fa',
-  '#a78bfa', '#ff7ab6', '#f472b6', '#fb923c', '#22c55e'
+  '#ec4899', '#f97316',
 ];
 
 // Helper function to generate UUID v4
@@ -71,6 +68,7 @@ export function AdminDashboard() {
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Modal state for bar (courses) and pie groups
   const [selectedCourse, setSelectedCourse] = useState<{
@@ -87,6 +85,15 @@ export function AdminDashboard() {
 
   // Ref to measure chart wrapper width for column click detection
   const chartWrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -254,50 +261,39 @@ export function AdminDashboard() {
 
   // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
-    // Define groups in the desired order
-    const orderedGroupNames = [
-      '0 Badges',
-      '1-4 Badges',
-      '5-9 Badges',
-      '10-14 Badges',
-      '15-18 Badges',
-      '19 Badges',
-      '19 Badges + Arcade',
+    // Define groups in the desired order to guarantee legend sequence
+    const groups: { name: string; participants: Participant[] }[] = [
+      { name: '0 Badges', participants: [] },
+      { name: '1-4 Badges', participants: [] },
+      { name: '5-9 Badges', participants: [] },
+      { name: '10-14 Badges', participants: [] },
+      { name: '15-18 Badges', participants: [] },
+      { name: '19 Badges', participants: [] },
+      { name: '19 Badges + Arcade', participants: [] },
     ];
-
-    const groups: { [key: string]: { name: string; participants: Participant[] } } = {
-      '0 Badges': { name: '0 Badges', participants: [] },
-      '1-4 Badges': { name: '1-4 Badges', participants: [] },
-      '5-9 Badges': { name: '5-9 Badges', participants: [] },
-      '10-14 Badges': { name: '10-14 Badges', participants: [] },
-      '15-18 Badges': { name: '15-18 Badges', participants: [] },
-      '19 Badges': { name: '19 Badges', participants: [] },
-      '19 Badges + Arcade': { name: '19 Badges + Arcade', participants: [] },
-    };
 
     participants.forEach((p) => {
       const badges = p.skillBadgesCount || 0;
       const arcade = p.arcadeGamesCount || 0;
 
       if (badges >= 19 && arcade > 0) {
-        groups['19 Badges + Arcade'].participants.push(p);
+        groups[6].participants.push(p); // 19 Badges + Arcade
       } else if (badges === 19) {
-        groups['19 Badges'].participants.push(p);
+        groups[5].participants.push(p); // 19 Badges
       } else if (badges >= 15) {
-        groups['15-18 Badges'].participants.push(p);
+        groups[4].participants.push(p); // 15-18 Badges
       } else if (badges >= 10) {
-        groups['10-14 Badges'].participants.push(p);
+        groups[3].participants.push(p); // 10-14 Badges
       } else if (badges >= 5) {
-        groups['5-9 Badges'].participants.push(p);
+        groups[2].participants.push(p); // 5-9 Badges
       } else if (badges >= 1) {
-        groups['1-4 Badges'].participants.push(p);
+        groups[1].participants.push(p); // 1-4 Badges
       } else {
-        groups['0 Badges'].participants.push(p);
+        groups[0].participants.push(p); // 0 Badges
       }
     });
 
-    // Return the groups in the predefined order
-    return orderedGroupNames.map(name => groups[name]);
+    return groups;
   }, [participants]);
 
   const distribution = distributionDetailed
@@ -388,13 +384,13 @@ export function AdminDashboard() {
     const { x, y, width, value } = props;
     if (value === 0 || value == null) return null;
     const cx = x + width / 2;
-    const cy = y - 8; // adjusted offset for larger font
+    const cy = y - 8;
     return (
       <text
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={16} // increased font size
+        fontSize={isMobile ? 10 : 12} // Responsive font size
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
@@ -742,9 +738,9 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="48%"
+                    cy="50%"
                     labelLine={false}
-                    outerRadius={220} // Increased radius
+                    outerRadius={isMobile ? 120 : 220} // Responsive radius
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
@@ -761,7 +757,6 @@ export function AdminDashboard() {
                       />
                     ))}
                   </Pie>
-                  <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -802,10 +797,9 @@ export function AdminDashboard() {
                       height={40}
                     />
                     <YAxis hide domain={[0, (dataMax: number) => dataMax + 5]} />
-                    <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={30} // Increased bar width
+                      barSize={35} // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
