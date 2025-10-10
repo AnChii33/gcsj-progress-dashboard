@@ -2,12 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../lib/database';
 import { Participant } from '../types';
-import { Search, TrendingUp, Award, CheckCircle, XCircle, ArrowUpDown, ExternalLink } from 'lucide-react';
+import { Search, TrendingUp, Award, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 
 export function PublicDashboard() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'badges'>('name');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const navigate = useNavigate();
 
@@ -30,23 +29,60 @@ export function PublicDashboard() {
     }
   };
 
-  const filteredAndSortedParticipants = useMemo(() => {
+  const filteredParticipants = useMemo(() => {
     let filtered = participants.filter(
       (p) =>
         p.userName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (sortBy === 'name') {
-      filtered.sort((a, b) => a.userName.localeCompare(b.userName));
-    } else {
-      filtered.sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
-    }
+    // Always sort by name alphabetically
+    filtered.sort((a, b) => a.userName.localeCompare(b.userName));
 
     return filtered;
-  }, [participants, searchTerm, sortBy]);
+  }, [participants, searchTerm]);
 
   const handleParticipantClick = (participantId: string) => {
     navigate(`/participant/${participantId}`);
+  };
+
+  // Helper function to determine card styling based on completion
+  const getParticipantCardStyle = (participant: Participant) => {
+    const badges = participant.skillBadgesCount;
+    const arcade = participant.arcadeGamesCount;
+
+    // Full completion: 19 badges + 1 arcade game
+    if (badges >= 19 && arcade >= 1) {
+      return 'border-2 border-green-500 bg-gradient-to-br from-green-50 to-emerald-50';
+    }
+    // 19 badges completed (needs arcade game)
+    if (badges >= 19) {
+      return 'border-2 border-amber-500 bg-gradient-to-br from-amber-50 to-yellow-50';
+    }
+    // Default
+    return 'border border-slate-200';
+  };
+
+  const getCompletionBadge = (participant: Participant) => {
+    const badges = participant.skillBadgesCount;
+    const arcade = participant.arcadeGamesCount;
+
+    if (badges >= 19 && arcade >= 1) {
+      return (
+        <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-xs font-bold">
+          <CheckCircle className="w-3 h-3" />
+          FULLY COMPLETED
+        </div>
+      );
+    }
+    if (badges >= 19) {
+      return (
+        <div className="flex items-center gap-1 px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-bold">
+          <Award className="w-3 h-3" />
+          BADGES COMPLETE
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -71,8 +107,8 @@ export function PublicDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
@@ -82,31 +118,6 @@ export function PublicDashboard() {
               className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSortBy('name')}
-              className={`px-4 py-3 rounded-lg font-medium transition flex items-center gap-2 ${
-                sortBy === 'name'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-              }`}
-            >
-              <ArrowUpDown className="w-4 h-4" />
-              Name
-            </button>
-            <button
-              onClick={() => setSortBy('badges')}
-              className={`px-4 py-3 rounded-lg font-medium transition flex items-center gap-2 ${
-                sortBy === 'badges'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              Badges
-            </button>
-          </div>
         </div>
 
         {lastUpdated && (
@@ -115,7 +126,7 @@ export function PublicDashboard() {
           </div>
         )}
 
-        {filteredAndSortedParticipants.length === 0 ? (
+        {filteredParticipants.length === 0 ? (
           <div className="text-center py-16">
             <Award className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-700 mb-2">
@@ -129,17 +140,20 @@ export function PublicDashboard() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredAndSortedParticipants.map((participant) => (
+            {filteredParticipants.map((participant) => (
               <div
                 key={participant.id}
                 onClick={() => handleParticipantClick(participant.id)}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer border border-slate-200 p-6"
+                className={`bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer p-6 ${getParticipantCardStyle(participant)}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                      {participant.userName}
-                    </h3>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        {participant.userName}
+                      </h3>
+                      {getCompletionBadge(participant)}
+                    </div>
                     <a
                       href={participant.profileUrl}
                       target="_blank"
