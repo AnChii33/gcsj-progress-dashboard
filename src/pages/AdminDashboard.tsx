@@ -757,6 +757,7 @@ export function AdminDashboard() {
                       />
                     ))}
                   </Pie>
+                  <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
