@@ -20,11 +20,47 @@ export async function parseCsvFile(
   reportDate: string
 ): Promise<{ participants: Participant[]; snapshots: DailySnapshot[] }> {
   return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error('No file provided'));
+      return;
+    }
+
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      reject(new Error('Invalid file type. Please upload a CSV file'));
+      return;
+    }
+
     Papa.parse<CsvRow>(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
         try {
+          if (results.errors && results.errors.length > 0) {
+            throw new Error(`CSV parsing error: ${results.errors[0].message}`);
+          }
+
+          if (!results.data || results.data.length === 0) {
+            throw new Error('CSV file is empty or contains no valid data');
+          }
+
+          // Validate CSV structure
+          const requiredColumns = [
+            'User Name',
+            'User Email',
+            'Google Cloud Skills Boost Profile URL',
+            'Profile URL Status',
+            'Access Code Redemption Status',
+            '# of Skill Badges Completed',
+            'Names of Completed Skill Badges',
+            '# of Arcade Games Completed',
+            'Names of Completed Arcade Games'
+          ];
+
+          const missingColumns = requiredColumns.filter(col => !results.meta.fields?.includes(col));
+          if (missingColumns.length > 0) {
+            throw new Error(`Missing required columns: ${missingColumns.join(', ')}`);
+          }
+
           const participants: Participant[] = [];
           const snapshots: DailySnapshot[] = [];
           const existingParticipants = await database.getParticipants();
