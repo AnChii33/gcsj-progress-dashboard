@@ -1,209 +1,140 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
-export function AdminSettings() {
-  const { currentAdminEmail, changeCredentials, logout } = useAuth();
-  const navigate = useNavigate();
-  const [newEmail, setNewEmail] = useState(currentAdminEmail || '');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+// --- HARDCODED CREDENTIALS FOR CORE TEAM ---
+const CORE_TEAM_EMAIL = 'coreteam@stcet.edu.in';
+const CORE_TEAM_PASSWORD = 'CoreTeamSTCET2024!';
+// ---
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess(false);
+interface AuthContextType {
+  isAuthenticated: boolean;
+  currentAdminEmail: string | null;
+  userRole: 'admin' | 'core_team' | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  changeCredentials: (currentEmail: string, newEmail: string, newPassword: string) => Promise<boolean>;
+}
 
-    if (!newEmail.trim()) {
-      setError('Email is required');
-      return;
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const AUTH_KEY = 'gcskb_admin_auth';
+const ADMIN_EMAIL_KEY = 'gcskb_admin_email';
+const USER_ROLE_KEY = 'gcskb_user_role';
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'core_team' | null>(null);
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem(AUTH_KEY);
+    const email = sessionStorage.getItem(ADMIN_EMAIL_KEY);
+    const role = sessionStorage.getItem(USER_ROLE_KEY) as 'admin' | 'core_team' | null;
+    if (auth === 'true' && email && role) {
+      setIsAuthenticated(true);
+      setCurrentAdminEmail(email);
+      setUserRole(role);
+    }
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    // Step 1: Check for hardcoded Core Team credentials
+    if (email === CORE_TEAM_EMAIL && password === CORE_TEAM_PASSWORD) {
+      const role = 'core_team';
+      setIsAuthenticated(true);
+      setCurrentAdminEmail(email);
+      setUserRole(role);
+      sessionStorage.setItem(AUTH_KEY, 'true');
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, email);
+      sessionStorage.setItem(USER_ROLE_KEY, role);
+      return true;
     }
 
-    if (!newPassword) {
-      setError('Password is required');
-      return;
+    // Step 2: If not Core Team, check database for Admin credentials
+    try {
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('email')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        // This is expected if the credentials are for the core team or are invalid
+        return false;
+      }
+      
+      // If we get here, it's the admin
+      const role = 'admin';
+      setIsAuthenticated(true);
+      setCurrentAdminEmail(data.email);
+      setUserRole(role);
+      sessionStorage.setItem(AUTH_KEY, 'true');
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, data.email);
+      sessionStorage.setItem(USER_ROLE_KEY, role);
+      return true;
+
+    } catch (error) {
+      console.error('Admin login error:', error);
+      return false;
     }
+  };
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
+  const logout = () => {
+    setIsAuthenticated(false);
+    setCurrentAdminEmail(null);
+    setUserRole(null);
+    sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_EMAIL_KEY);
+    sessionStorage.removeItem(USER_ROLE_KEY);
+  };
+
+  const changeCredentials = async (
+    currentEmail: string,
+    newEmail: string,
+    newPassword: string
+  ): Promise<boolean> => {
+    // This function now only affects the admin user in the database
+    try {
+      const { error } = await supabase
+        .from('admin_users')
+        .update({ email: newEmail, password: newPassword, updated_at: new Date() })
+        .eq('email', currentEmail);
+
+      if (error) {
+        console.error('Update error:', error);
+        return false;
+      }
+
+      setCurrentAdminEmail(newEmail);
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, newEmail);
+      return true;
+    } catch (error) {
+      console.error('Change credentials error:', error);
+      return false;
     }
-
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setLoading(true);
-
-    const result = await changeCredentials(
-      currentAdminEmail!,
-      newEmail.trim(),
-      newPassword
-    );
-
-    if (result) {
-      setSuccess(true);
-      setNewPassword('');
-      setConfirmPassword('');
-
-      setTimeout(() => {
-        setSuccess(false);
-      }, 3000);
-    } else {
-      setError('Failed to update credentials. Please try again.');
-    }
-
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => navigate('/admin')}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4 transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Admin Settings</h1>
-            <p className="text-sm text-slate-600 mt-1">
-              Update your admin credentials
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <div className="mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-              <Lock className="w-8 h-8 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Change Admin Credentials</h2>
-            <p className="text-slate-600 text-sm">
-              Update your email and password. You will need to log in again after changing credentials.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="current-email" className="block text-sm font-medium text-slate-700 mb-2">
-                Current Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  id="current-email"
-                  type="email"
-                  value={currentAdminEmail || ''}
-                  disabled
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="new-email" className="block text-sm font-medium text-slate-700 mb-2">
-                New Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  id="new-email"
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  placeholder="admin@stcet.edu.in"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 mb-2">
-                New Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  placeholder="Enter new password (min 8 characters)"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  placeholder="Confirm new password"
-                  required
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
-
-            {success && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">Credentials updated successfully!</span>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Updating...' : 'Update Credentials'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/admin')}
-                className="px-6 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs text-amber-800">
-              <strong>Important:</strong> After updating your credentials, you will remain logged in during this session.
-              The new credentials will be required for your next login.
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        currentAdminEmail,
+        userRole,
+        login,
+        logout,
+        changeCredentials,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

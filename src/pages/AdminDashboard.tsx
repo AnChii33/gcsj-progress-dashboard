@@ -59,7 +59,7 @@ function generateUUID(): string {
 }
 
 export function AdminDashboard() {
-  const { logout } = useAuth();
+  const { logout, userRole } = useAuth();
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [uploads, setUploads] = useState<CsvUpload[]>([]);
@@ -474,13 +474,15 @@ export function AdminDashboard() {
               >
                 View Public Dashboard
               </button>
-              <button
-                onClick={() => navigate('/admin/settings')}
-                className="flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
-              </button>
+              {userRole === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin/settings')}
+                  className="flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1 px-2 py-1 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-xs sm:text-sm"
@@ -621,92 +623,94 @@ export function AdminDashboard() {
         </div>
 
         {/* Upload CSV card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Upload className="w-5 h-5 text-blue-600" />
-            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Upload CSV Files</h2>
-          </div>
+        {userRole === 'admin' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Upload className="w-5 h-5 text-blue-600" />
+              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Upload CSV Files</h2>
+            </div>
 
-          <div className="space-y-3 mb-4">
-            {uploadItems.map((item, index) => (
-              <div key={item.id} className="flex gap-3 items-start">
-                <div className="flex-1">
-                  <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
-                    CSV File {index + 1}
-                  </label>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) =>
-                      handleFileChange(item.id, e.target.files?.[0] || null)
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
+            <div className="space-y-3 mb-4">
+              {uploadItems.map((item, index) => (
+                <div key={item.id} className="flex gap-3 items-start">
+                  <div className="flex-1">
+                    <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
+                      CSV File {index + 1}
+                    </label>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) =>
+                        handleFileChange(item.id, e.target.files?.[0] || null)
+                      }
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="w-40 sm:w-44">
+                    <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
+                      Upload Date
+                    </label>
+                    <input
+                      type="date"
+                      value={item.date}
+                      onChange={(e) => handleDateChange(item.id, e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  {uploadItems.length > 1 && (
+                    <button
+                      onClick={() => handleRemoveUploadItem(item.id)}
+                      className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
+              ))}
+            </div>
 
-                <div className="w-40 sm:w-44">
-                  <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
-                    Upload Date
-                  </label>
-                  <input
-                    type="date"
-                    value={item.date}
-                    onChange={(e) => handleDateChange(item.id, e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={handleAddUploadItem}
+                className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-xs sm:text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add More Files
+              </button>
 
-                {uploadItems.length > 1 && (
-                  <button
-                    onClick={() => handleRemoveUploadItem(item.id)}
-                    className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+              <button
+                onClick={handleUpload}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Processing...' : 'Upload & Process'}
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] sm:text-sm text-blue-800">
+              <strong>Note:</strong> The CSV file uploaded with a specific date represents progress until the
+              previous day midnight. For example, uploading with date Oct 8 means the data reflects progress
+              up to Oct 7 midnight.
+            </div>
+
+            {uploadStatus && (
+              <div className="mt-3 flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs sm:text-sm">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{uploadStatus}</span>
               </div>
-            ))}
+            )}
+
+            {error && (
+              <div className="mt-3 flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs sm:text-sm">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
           </div>
-
-          <div className="flex gap-2 mb-3">
-            <button
-              onClick={handleAddUploadItem}
-              className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-xs sm:text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add More Files
-            </button>
-
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="flex items-center gap-2 px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
-            >
-              <Upload className="w-4 h-4" />
-              {uploading ? 'Processing...' : 'Upload & Process'}
-            </button>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] sm:text-sm text-blue-800">
-            <strong>Note:</strong> The CSV file uploaded with a specific date represents progress until the
-            previous day midnight. For example, uploading with date Oct 8 means the data reflects progress
-            up to Oct 7 midnight.
-          </div>
-
-          {uploadStatus && (
-            <div className="mt-3 flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs sm:text-sm">
-              <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{uploadStatus}</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-3 flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs sm:text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
@@ -760,7 +764,7 @@ export function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={chartData}
-                        margin={{ top: 8, right: 16, left: -12, bottom: 32 }}
+                        margin={{ top: 8, right: 16, left: 16, bottom: 32 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
