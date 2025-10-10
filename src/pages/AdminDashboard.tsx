@@ -622,7 +622,7 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Upload CSV card */}
+        {/* Upload CSV card - ADMIN ONLY */}
         {userRole === 'admin' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -895,49 +895,52 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Uploaded Files</h2>
-          </div>
-          <div className="space-y-2">
-            {uploads.length > 0 ? (
-              uploads.map((upload) => (
-                <div
-                  key={upload.id}
-                  className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium text-slate-800 text-xs sm:text-sm">{upload.filename}</p>
-                    <p className="text-xs sm:text-sm text-slate-600">
-                      Report Date: {new Date(upload.reportDate).toLocaleDateString()} | Uploaded:{' '}
-                      {new Date(upload.uploadDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p className="text-xs sm:text-sm font-medium text-slate-700">
-                        {upload.participantCount}
+        {/* Uploaded Files Section - ADMIN ONLY */}
+        {userRole === 'admin' && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Uploaded Files</h2>
+            </div>
+            <div className="space-y-2">
+              {uploads.length > 0 ? (
+                uploads.map((upload) => (
+                  <div
+                    key={upload.id}
+                    className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-800 text-xs sm:text-sm">{upload.filename}</p>
+                      <p className="text-xs sm:text-sm text-slate-600">
+                        Report Date: {new Date(upload.reportDate).toLocaleDateString()} | Uploaded:{' '}
+                        {new Date(upload.uploadDate).toLocaleDateString()}
                       </p>
-                      <p className="text-[11px] sm:text-sm text-slate-600">participants</p>
                     </div>
-                    <button
-                      onClick={() => handleDeleteUpload(upload.id, upload.reportDate)}
-                      disabled={deleting === upload.id}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm font-medium text-slate-700">
+                          {upload.participantCount}
+                        </p>
+                        <p className="text-[11px] sm:text-sm text-slate-600">participants</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteUpload(upload.id, upload.reportDate)}
+                        disabled={deleting === upload.id}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
-                No uploads yet. Upload your first CSV file to get started.
-              </p>
-            )}
+                ))
+              ) : (
+                <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
+                  No uploads yet. Upload your first CSV file to get started.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Modal: show list of participants for selected course/ARC or pie group */}
