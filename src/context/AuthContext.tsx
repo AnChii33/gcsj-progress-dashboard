@@ -1,63 +1,94 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  currentAdminEmail: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  changePassword: (newPassword: string) => void;
+  changeCredentials: (currentEmail: string, newEmail: string, newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_CREDENTIALS = {
-  email: 'admin',
-  password: 'AdminSTCET2024!',
-};
-
 const AUTH_KEY = 'gcskb_admin_auth';
-const CREDS_KEY = 'gcskb_admin_creds';
+const ADMIN_EMAIL_KEY = 'gcskb_admin_email';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    const auth = localStorage.getItem(AUTH_KEY);
-    if (auth === 'true') {
+    const auth = sessionStorage.getItem(AUTH_KEY);
+    const email = sessionStorage.getItem(ADMIN_EMAIL_KEY);
+    if (auth === 'true' && email) {
       setIsAuthenticated(true);
-    }
-
-    const savedCreds = localStorage.getItem(CREDS_KEY);
-    if (!savedCreds) {
-      localStorage.setItem(CREDS_KEY, JSON.stringify(ADMIN_CREDENTIALS));
+      setCurrentAdminEmail(email);
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const credsStr = localStorage.getItem(CREDS_KEY);
-    const creds = credsStr ? JSON.parse(credsStr) : ADMIN_CREDENTIALS;
+    try {
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
 
-    if (email === creds.email && password === creds.password) {
+      if (error || !data) {
+        return false;
+      }
+
       setIsAuthenticated(true);
-      localStorage.setItem(AUTH_KEY, 'true');
+      setCurrentAdminEmail(email);
+      sessionStorage.setItem(AUTH_KEY, 'true');
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, email);
       return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem(AUTH_KEY);
+    setCurrentAdminEmail(null);
+    sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(ADMIN_EMAIL_KEY);
   };
 
-  const changePassword = (newPassword: string) => {
-    const credsStr = localStorage.getItem(CREDS_KEY);
-    const creds = credsStr ? JSON.parse(credsStr) : ADMIN_CREDENTIALS;
-    creds.password = newPassword;
-    localStorage.setItem(CREDS_KEY, JSON.stringify(creds));
+  const changeCredentials = async (
+    currentEmail: string,
+    newEmail: string,
+    newPassword: string
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('admin_users')
+        .update({
+          email: newEmail,
+          password: newPassword,
+          updated_at: new Date().toISOString()
+        })
+        .eq('email', currentEmail);
+
+      if (error) {
+        console.error('Update error:', error);
+        return false;
+      }
+
+      setCurrentAdminEmail(newEmail);
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, newEmail);
+      return true;
+    } catch (error) {
+      console.error('Change credentials error:', error);
+      return false;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, changePassword }}>
+    <AuthContext.Provider value={{ isAuthenticated, currentAdminEmail, login, logout, changeCredentials }}>
       {children}
     </AuthContext.Provider>
   );

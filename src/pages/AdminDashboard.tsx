@@ -16,6 +16,7 @@ import {
   AlertCircle,
   BarChart3,
   Trash2,
+  Settings,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
@@ -205,6 +206,13 @@ export function AdminDashboard() {
                 className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
               >
                 View Public Dashboard
+              </button>
+              <button
+                onClick={() => navigate('/admin/settings')}
+                className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
               </button>
               <button
                 onClick={handleLogout}
