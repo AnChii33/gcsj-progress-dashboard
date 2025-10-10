@@ -254,39 +254,50 @@ export function AdminDashboard() {
 
   // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
-    // Define groups in the desired order to guarantee legend sequence
-    const groups: { name: string; participants: Participant[] }[] = [
-      { name: '0 Badges', participants: [] },
-      { name: '1-4 Badges', participants: [] },
-      { name: '5-9 Badges', participants: [] },
-      { name: '10-14 Badges', participants: [] },
-      { name: '15-18 Badges', participants: [] },
-      { name: '19 Badges', participants: [] },
-      { name: '19 Badges + Arcade', participants: [] },
+    // Define groups in the desired order
+    const orderedGroupNames = [
+      '0 Badges',
+      '1-4 Badges',
+      '5-9 Badges',
+      '10-14 Badges',
+      '15-18 Badges',
+      '19 Badges',
+      '19 Badges + Arcade',
     ];
+
+    const groups: { [key: string]: { name: string; participants: Participant[] } } = {
+      '0 Badges': { name: '0 Badges', participants: [] },
+      '1-4 Badges': { name: '1-4 Badges', participants: [] },
+      '5-9 Badges': { name: '5-9 Badges', participants: [] },
+      '10-14 Badges': { name: '10-14 Badges', participants: [] },
+      '15-18 Badges': { name: '15-18 Badges', participants: [] },
+      '19 Badges': { name: '19 Badges', participants: [] },
+      '19 Badges + Arcade': { name: '19 Badges + Arcade', participants: [] },
+    };
 
     participants.forEach((p) => {
       const badges = p.skillBadgesCount || 0;
       const arcade = p.arcadeGamesCount || 0;
 
       if (badges >= 19 && arcade > 0) {
-        groups[6].participants.push(p); // 19 Badges + Arcade
+        groups['19 Badges + Arcade'].participants.push(p);
       } else if (badges === 19) {
-        groups[5].participants.push(p); // 19 Badges
+        groups['19 Badges'].participants.push(p);
       } else if (badges >= 15) {
-        groups[4].participants.push(p); // 15-18 Badges
+        groups['15-18 Badges'].participants.push(p);
       } else if (badges >= 10) {
-        groups[3].participants.push(p); // 10-14 Badges
+        groups['10-14 Badges'].participants.push(p);
       } else if (badges >= 5) {
-        groups[2].participants.push(p); // 5-9 Badges
+        groups['5-9 Badges'].participants.push(p);
       } else if (badges >= 1) {
-        groups[1].participants.push(p); // 1-4 Badges
+        groups['1-4 Badges'].participants.push(p);
       } else {
-        groups[0].participants.push(p); // 0 Badges
+        groups['0 Badges'].participants.push(p);
       }
     });
 
-    return groups;
+    // Return the groups in the predefined order
+    return orderedGroupNames.map(name => groups[name]);
   }, [participants]);
 
   const distribution = distributionDetailed
@@ -731,7 +742,7 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="50%"
+                    cy="47%"
                     labelLine={false}
                     outerRadius={220} // Increased radius
                     fill="#8884d8"
@@ -794,7 +805,7 @@ export function AdminDashboard() {
                     <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={35} // Increased bar width
+                      barSize={30} // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
