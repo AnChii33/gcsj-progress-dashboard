@@ -80,7 +80,7 @@ export function PublicDashboard() {
 
     if (badges >= 19 && arcade >= 1) {
       return (
-        <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-xs font-bold">
+        <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-xs sm:text-sm font-bold">
           <Trophy className="w-3 h-3" />
           FULLY COMPLETED
         </div>
@@ -88,7 +88,7 @@ export function PublicDashboard() {
     }
     if (badges >= 19) {
       return (
-        <div className="flex items-center gap-1 px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-bold">
+        <div className="flex items-center gap-1 px-3 py-1 bg-amber-600 text-white rounded-full text-xs sm:text-sm font-bold">
           <Award className="w-3 h-3" />
           ALL BADGES DONE
         </div>
@@ -96,7 +96,7 @@ export function PublicDashboard() {
     }
     if (badges >= 15 && badges <= 18) {
       return (
-        <div className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-full text-xs font-bold">
+        <div className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-full text-xs sm:text-sm font-bold">
           <Star className="w-3 h-3" />
           ALMOST THERE
         </div>
@@ -104,7 +104,7 @@ export function PublicDashboard() {
     }
     if (badges >= 10 && badges <= 14) {
       return (
-        <div className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+        <div className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full text-xs sm:text-sm font-bold">
           <Zap className="w-3 h-3" />
           GREAT PROGRESS
         </div>
@@ -112,7 +112,7 @@ export function PublicDashboard() {
     }
     if (badges >= 5 && badges <= 9) {
       return (
-        <div className="flex items-center gap-1 px-3 py-1 bg-cyan-600 text-white rounded-full text-xs font-bold">
+        <div className="flex items-center gap-1 px-3 py-1 bg-cyan-600 text-white rounded-full text-xs sm:text-sm font-bold">
           <Target className="w-3 h-3" />
           GOOD START
         </div>
@@ -127,10 +127,10 @@ export function PublicDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
                 Google Cloud Study Jam Progress
               </h1>
-              <p className="text-slate-600 mt-1">
+              <p className="text-slate-600 mt-1 text-sm sm:text-base">
                 St. Thomas' College of Engineering & Technology - Kolkata, 2025-26
               </p>
             </div>
@@ -151,7 +151,7 @@ export function PublicDashboard() {
               placeholder="Search by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
             />
           </div>
         </div>
@@ -165,10 +165,10 @@ export function PublicDashboard() {
         {filteredParticipants.length === 0 ? (
           <div className="text-center py-16">
             <Award className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-700 mb-2">
               {participants.length === 0 ? 'No Data Available' : 'No Results Found'}
             </h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 text-sm">
               {participants.length === 0
                 ? 'Upload CSV data from the admin portal to get started'
                 : 'Try adjusting your search criteria'}
@@ -185,7 +185,7 @@ export function PublicDashboard() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-semibold text-slate-800">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-800">
                         {participant.userName}
                       </h3>
                       {getCompletionBadge(participant)}
@@ -195,7 +195,7 @@ export function PublicDashboard() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-3"
+                      className="inline-flex items-center gap-1 text-xs sm:text-sm text-blue-600 hover:text-blue-700 mb-3"
                     >
                       View Profile
                       <ExternalLink className="w-3 h-3" />
@@ -204,13 +204,13 @@ export function PublicDashboard() {
                     <div className="flex flex-wrap gap-3">
                       <div className="flex items-center gap-2">
                         <Award className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs sm:text-sm font-medium text-slate-700">
                           {participant.skillBadgesCount} Skill Badges
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs sm:text-sm font-medium text-slate-700">
                           {participant.arcadeGamesCount} Arcade Games
                         </span>
                       </div>
