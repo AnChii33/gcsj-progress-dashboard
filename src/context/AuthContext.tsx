@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // --- HARDCODED CREDENTIALS FOR CORE TEAM ---
-const CORE_TEAM_EMAIL = 'coreteam@stcet.edu.in';
-const CORE_TEAM_PASSWORD = 'CoreTeamSTCET2024!';
+const CORE_TEAM_EMAIL = 'gdgoncampus@stcet.ac.in';
+const CORE_TEAM_PASSWORD = 'GDGOC-25-08-2025';
 // ---
 
 interface AuthContextType {
