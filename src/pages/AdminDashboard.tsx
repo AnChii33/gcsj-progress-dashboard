@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { database } from '../lib/database';
@@ -18,7 +18,20 @@ import {
   Trash2,
   Settings,
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
+} from 'recharts';
 
 interface UploadItem {
   file: File | null;
@@ -26,7 +39,12 @@ interface UploadItem {
   id: string;
 }
 
-const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
+const COLORS = [
+  '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+  '#ec4899', '#f97316', '#06b6d4', '#84cc16', '#7c3aed',
+  '#0ea5a4', '#ef5350', '#fbbf24', '#34d399', '#60a5fa',
+  '#a78bfa', '#ff7ab6', '#f472b6', '#fb923c', '#22c55e'
+];
 
 // Helper function to generate UUID v4
 function generateUUID(): string {
@@ -214,34 +232,122 @@ export function AdminDashboard() {
   const sortedParticipants = [...participants].sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
   const topPerformers = sortedParticipants.slice(0, 10);
 
+  /**
+   * Course full names (first 19 are C1..C19, final item is the arcade/game which we label ARC)
+   * -- IMPORTANT: keep this list in the same order you provided
+   */
+  const courseFullNames = [
+    'The Basics of Google Cloud Compute [Skill Badge]',
+    'Get Started with Cloud Storage [Skill Badge]',
+    'Get Started with Pub/Sub [Skill Badge]',
+    'Get Started with API Gateway [Skill Badge]',
+    'Get Started with Looker [Skill Badge]',
+    'Get Started with Dataplex [Skill Badge]',
+    'Get Started with Google Workspace Tools [Skill Badge]',
+    'App Building with AppSheet [Skill Badge]',
+    'Develop with Apps Script and AppSheet [Skill Badge]',
+    'Build a Website on Google Cloud [Skill Badge]',
+    'Set Up a Google Cloud Network [Skill Badge]',
+    'Store, Process, and Manage Data on Google Cloud - Console [Skill Badge]',
+    'Cloud Run Functions: 3 Ways [Skill Badge]',
+    'App Engine: 3 Ways [Skill Badge]',
+    'Cloud Speech API: 3 Ways [Skill Badge]',
+    'Monitoring in Google Cloud [Skill Badge]',
+    'Analyze Speech and Language with Google APIs [Skill Badge]',
+    'Prompt Design in Vertex AI [Skill Badge]',
+    'Develop Gen AI Apps with Gemini and Streamlit [Skill Badge]',
+  ];
+  const arcadeFullName = 'Level 3: Generative AI [Game]';
+
+  /**
+   * chartData: compute counts for each course (C1..C19) by scanning participant.skillBadgeNames (pipe-separated),
+   * and for ARC use arcadeGamesCount > 0 as a proxy (since participants in this codebase track arcadeGamesCount).
+   *
+   * Note: matching is done by exact/substring membership in participant.skillBadgeNames entries to be tolerant
+   * of small variations.
+   */
+  const chartData = useMemo(() => {
+    const courseCounts = new Array(courseFullNames.length).fill(0);
+    let arcCount = 0;
+
+    participants.forEach((p) => {
+      const sbRaw = (p as any).skillBadgeNames || '';
+      const badges = String(sbRaw).split('|').map((s) => s.trim()).filter(Boolean);
+
+      courseFullNames.forEach((courseName, idx) => {
+        const matched = badges.some(b =>
+          b === courseName || b.includes(courseName) || courseName.includes(b)
+        );
+        if (matched) courseCounts[idx] += 1;
+      });
+
+      if ((p.arcadeGamesCount || 0) > 0) arcCount += 1;
+    });
+
+    const data = courseFullNames.map((fullName, idx) => ({
+      name: `C${idx + 1}`,
+      fullName,
+      value: courseCounts[idx] || 0,
+    }));
+
+    data.push({
+      name: 'ARC',
+      fullName: arcadeFullName,
+      value: arcCount,
+    });
+
+    return data;
+  }, [participants]);
+
+  // Custom label renderer used by LabelList to put a tiny thin count above each bar
+  const renderTinyTopLabel = (props: any) => {
+    const { x, y, width, value } = props;
+    if (value === 0 || value == null) return null;
+    const cx = x + width / 2;
+    const cy = y - 6; // slight offset above the bar
+    return (
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        fontSize={9}
+        fontWeight={300 as any}
+        fill="#0f172a"
+        style={{ pointerEvents: 'none' }}
+      >
+        {value}
+      </text>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
-              <p className="text-sm text-slate-600 mt-1">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-800">Admin Dashboard</h1>
+              <p className="text-[11px] sm:text-sm text-slate-600 mt-1">
                 Manage progress tracking and analytics
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate('/')}
-                className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
+                className="px-2 py-1 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
               >
                 View Public Dashboard
               </button>
               <button
                 onClick={() => navigate('/admin/settings')}
-                className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 font-medium transition"
+                className="flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
               >
                 <Settings className="w-4 h-4" />
                 <span>Settings</span>
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition"
+                className="flex items-center gap-1 px-2 py-1 bg-slate-200 hover:bg-slate-300 rounded-lg transition text-xs sm:text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -251,56 +357,56 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Participants</p>
-                <p className="text-3xl font-bold text-slate-800">{participants.length}</p>
+                <p className="text-[11px] sm:text-sm text-slate-600">Total Participants</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{participants.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Active Participants</p>
-                <p className="text-3xl font-bold text-slate-800">{activeParticipants.length}</p>
+                <p className="text-[11px] sm:text-sm text-slate-600">Active Participants</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{activeParticipants.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-amber-600" />
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Uploads</p>
-                <p className="text-3xl font-bold text-slate-800">{uploads.length}</p>
+                <p className="text-[11px] sm:text-sm text-slate-600">Total Uploads</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{uploads.length}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <Upload className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">Upload CSV Files</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Upload className="w-5 h-5 text-blue-600" />
+            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Upload CSV Files</h2>
           </div>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-3 mb-4">
             {uploadItems.map((item, index) => (
-              <div key={item.id} className="flex gap-4 items-start">
+              <div key={item.id} className="flex gap-3 items-start">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
                     CSV File {index + 1}
                   </label>
                   <input
@@ -309,38 +415,38 @@ export function AdminDashboard() {
                     onChange={(e) =>
                       handleFileChange(item.id, e.target.files?.[0] || null)
                     }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
 
-                <div className="w-48">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                <div className="w-40 sm:w-44">
+                  <label className="block text-[11px] sm:text-sm font-medium text-slate-700 mb-1">
                     Upload Date
                   </label>
                   <input
                     type="date"
                     value={item.date}
                     onChange={(e) => handleDateChange(item.id, e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-full border border-slate-300 rounded-lg px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   />
                 </div>
 
                 {uploadItems.length > 1 && (
                   <button
                     onClick={() => handleRemoveUploadItem(item.id)}
-                    className="mt-8 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                    className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
             ))}
           </div>
 
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-2 mb-3">
             <button
               onClick={handleAddUploadItem}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
+              className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition text-xs sm:text-sm"
             >
               <Plus className="w-4 h-4" />
               Add More Files
@@ -349,100 +455,153 @@ export function AdminDashboard() {
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
             >
               <Upload className="w-4 h-4" />
               {uploading ? 'Processing...' : 'Upload & Process'}
             </button>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] sm:text-sm text-blue-800">
             <strong>Note:</strong> The CSV file uploaded with a specific date represents progress until the
             previous day midnight. For example, uploading with date Oct 8 means the data reflects progress
             up to Oct 7 midnight.
           </div>
 
           {uploadStatus && (
-            <div className="mt-4 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <div className="mt-3 flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs sm:text-sm">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
               <span>{uploadStatus}</span>
             </div>
           )}
 
           {error && (
-            <div className="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <div className="mt-3 flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs sm:text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-800">Badge Distribution</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="w-5 h-5 text-blue-600" />
+              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Badge Distribution</h2>
             </div>
             {distribution.length > 0 ? (
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={distribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {distribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <>
+                {/* PIE chart area */}
+                <div className="h-56 sm:h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={distribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {distribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* BAR CHART: taller container, smaller bottom margin so plotting area fills lower half */}
+                <div className="mt-4">
+                  <div className="h-[360px] sm:h-[520px]"> {/* mobile 360px, desktop 520px */}
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={chartData}
+                        // give more horizontal room (left negative), reduce top/bottom margins
+                        margin={{ top: 50, right: 16, left: 16, bottom: 32 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10 }}
+                          interval={0}
+                          angle={-35}
+                          textAnchor="end"
+                          // reduce reserved height for rotated labels
+                          height={40}
+                        />
+                        {/* Hide Y axis but set domain so bars use full vertical range */}
+                        <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
+                        <Tooltip />
+
+                        <Bar dataKey="value" barSize={18} isAnimationActive={false}>
+                          {chartData.map((entry, idx) => (
+                            <Cell key={`barcell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                          ))}
+                          <LabelList dataKey="value" content={renderTinyTopLabel} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Legend mapping C1..C19 + ARC to full names */}
+                  <div className="mt-2 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {chartData.map((d, idx) => (
+                      <div className="flex items-start gap-2" key={d.name}>
+                        <span
+                          className="w-3 h-3 rounded-sm mt-1 shrink-0"
+                          style={{ background: COLORS[idx % COLORS.length] }}
+                        />
+                        <div className="truncate">
+                          <span className="font-medium mr-1">{d.name}:</span>
+                          <span className="text-[11px]">{d.fullName}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : (
-              <p className="text-center text-slate-600 py-8">
+              <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
                 No data available. Upload CSV files to see distribution.
               </p>
             )}
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-800">Top 10 Performers</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Top 10 Performers</h2>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {topPerformers.length > 0 ? (
                 topPerformers.map((participant, index) => (
                   <div
                     key={participant.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-bold text-slate-400 w-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm sm:text-base font-bold text-slate-400 w-6">
                         {index + 1}
                       </span>
                       <div>
-                        <p className="font-medium text-slate-800">{participant.userName}</p>
-                        <p className="text-xs text-slate-600">{participant.userEmail}</p>
+                        <p className="font-medium text-slate-800 text-xs sm:text-sm">{participant.userName}</p>
+                        <p className="text-xs sm:text-sm text-slate-600">{participant.userEmail}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-blue-600">
+                      <p className="text-sm sm:text-base font-bold text-blue-600">
                         {participant.skillBadgesCount}
                       </p>
-                      <p className="text-xs text-slate-600">badges</p>
+                      <p className="text-xs sm:text-sm text-slate-600">badges</p>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-center text-slate-600 py-8">
+                <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
                   No data available. Upload CSV files to see top performers.
                 </p>
               )}
@@ -450,36 +609,36 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Users className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">All Participants (Sorted by Badges)</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="w-5 h-5 text-blue-600" />
+            <h2 className="text-sm sm:text-lg font-bold text-slate-800">All Participants (Sorted by Badges)</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Rank</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Skill Badges</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Arcade Games</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Rank</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Name</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Email</th>
+                  <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Skill Badges</th>
+                  <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Arcade Games</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedParticipants.length > 0 ? (
                   sortedParticipants.map((participant, index) => (
                     <tr key={participant.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4 text-sm text-slate-600">{index + 1}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-slate-800">{participant.userName}</td>
-                      <td className="py-3 px-4 text-sm text-slate-600">{participant.userEmail}</td>
-                      <td className="py-3 px-4 text-sm text-center font-bold text-blue-600">{participant.skillBadgesCount}</td>
-                      <td className="py-3 px-4 text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
+                      <td className="py-2 px-3 text-xs sm:text-sm text-slate-600">{index + 1}</td>
+                      <td className="py-2 px-3 text-xs sm:text-sm font-medium text-slate-800">{participant.userName}</td>
+                      <td className="py-2 px-3 text-xs sm:text-sm text-slate-600">{participant.userEmail}</td>
+                      <td className="py-2 px-3 text-xs sm:text-sm text-center font-bold text-blue-600">{participant.skillBadgesCount}</td>
+                      <td className="py-2 px-3 text-xs sm:text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-600">
+                    <td colSpan={5} className="py-6 text-center text-slate-600 text-xs sm:text-sm">
                       No participants yet. Upload CSV files to get started.
                     </td>
                   </tr>
@@ -489,31 +648,31 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Calendar className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-slate-800">Uploaded Files</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Uploaded Files</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {uploads.length > 0 ? (
               uploads.map((upload) => (
                 <div
                   key={upload.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                  className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
                 >
                   <div>
-                    <p className="font-medium text-slate-800 text-sm">{upload.filename}</p>
-                    <p className="text-xs text-slate-600">
+                    <p className="font-medium text-slate-800 text-xs sm:text-sm">{upload.filename}</p>
+                    <p className="text-xs sm:text-sm text-slate-600">
                       Report Date: {new Date(upload.reportDate).toLocaleDateString()} | Uploaded:{' '}
                       {new Date(upload.uploadDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <p className="text-sm font-medium text-slate-700">
+                      <p className="text-xs sm:text-sm font-medium text-slate-700">
                         {upload.participantCount}
                       </p>
-                      <p className="text-xs text-slate-600">participants</p>
+                      <p className="text-[11px] sm:text-sm text-slate-600">participants</p>
                     </div>
                     <button
                       onClick={() => handleDeleteUpload(upload.id, upload.reportDate)}
@@ -526,7 +685,7 @@ export function AdminDashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-600 py-8">
+              <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
                 No uploads yet. Upload your first CSV file to get started.
               </p>
             )}
@@ -534,8 +693,5 @@ export function AdminDashboard() {
         </div>
       </main>
     </div>
-    );
+  );
 }
-
-
-    
