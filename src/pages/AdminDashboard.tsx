@@ -742,7 +742,7 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="49%"
+                    cy="48%"
                     labelLine={false}
                     outerRadius={220} // Increased radius
                     fill="#8884d8"
@@ -762,7 +762,7 @@ export function AdminDashboard() {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 20 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
