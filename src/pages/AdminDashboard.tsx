@@ -581,7 +581,7 @@ export function AdminDashboard() {
               <BarChart3 className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-[11px] text-slate-600">Total Uploads</p>
+              <p className="text-[11px] text-slate-600">Total CSV Uploads</p>
               <p className="text-xl font-bold text-slate-800">{uploads.length}</p>
             </div>
           </div>
