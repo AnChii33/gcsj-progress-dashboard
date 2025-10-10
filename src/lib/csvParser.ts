@@ -2,6 +2,15 @@ import Papa from 'papaparse';
 import { Participant, DailySnapshot } from '../types';
 import { database } from './database';
 
+// Helper function to generate UUID v4
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export interface CsvRow {
   'User Name': string;
   'User Email': string;
@@ -73,7 +82,8 @@ export async function parseCsvFile(
               (p) => p.userEmail === email
             );
 
-            const participantId = participant?.id || `p_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            // Use UUID format for new participants
+            const participantId = participant?.id || generateUUID();
 
             const skillBadgesCount = parseInt(row['# of Skill Badges Completed']) || 0;
             const arcadeGamesCount = parseInt(row['# of Arcade Games Completed']) || 0;
@@ -101,8 +111,9 @@ export async function parseCsvFile(
               }
             }
 
+            // Use UUID format for snapshots
             const snapshot: DailySnapshot = {
-              id: `s_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: generateUUID(),
               participantId,
               date: reportDate,
               skillBadgesCount,
