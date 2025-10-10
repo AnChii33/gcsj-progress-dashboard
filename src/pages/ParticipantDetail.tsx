@@ -129,8 +129,8 @@ export function ParticipantDetail() {
         color: 'green',
         icon: Trophy,
         headerBg: 'bg-gradient-to-r from-green-500 to-emerald-600',
-        title: '🏆 Amazing! Program Fully Completed!',
-        message: "You've successfully completed all 19 Skill Badges and 1 Arcade Game. Congratulations on your outstanding achievement!",
+        title: '🏆 Amazing! Cloud Study Jam Fully Completed! You are now eligible for certificate!',
+        message: "You've successfully completed all 19 Skill Badges and the Arcade Game. Congratulations on your outstanding achievement!",
         isHighlighted: true
       };
     }
@@ -141,8 +141,8 @@ export function ParticipantDetail() {
         icon: Sparkles,
         headerBg: 'bg-gradient-to-r from-amber-500 to-orange-600',
         title: '🎉 Congratulations! All 19 Badges Completed!',
-        message: "You're almost there! Complete 1 Arcade Game to finish the program completely.",
-        action: "Check your enrollment email for the Arcade Game link. Complete any one arcade game to achieve full completion status!",
+        message: "You're almost there! Complete 1 Arcade Game to finish the Cloud Study completely, and earn the certificate.",
+        action: "Check your enrollment email for the Arcade Game link. Complete the arcade game to achieve full completion status!",
         isHighlighted: true
       };
     }
