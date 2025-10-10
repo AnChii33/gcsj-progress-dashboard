@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // --- HARDCODED CREDENTIALS FOR CORE TEAM ---
-const CORE_TEAM_EMAIL = 'coreteam@stcet.edu.in';
+const CORE_TEAM_EMAIL = 'gdgoncampus';
 const CORE_TEAM_PASSWORD = 'CoreTeamSTCET2024!';
 // ---
 
