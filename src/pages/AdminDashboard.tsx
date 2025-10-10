@@ -805,7 +805,8 @@ export function AdminDashboard() {
                     <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={25} // Increased bar width
+                      barSize={30
+                  } // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
