@@ -17,6 +17,9 @@ import {
   BarChart3,
   Trash2,
   Settings,
+  Trophy,
+  Award,
+  Star,
 } from 'lucide-react';
 import {
   PieChart,
@@ -233,12 +236,20 @@ export function AdminDashboard() {
     }
   };
 
+  // Active participants
   const activeParticipants = participants.filter((p) => p.skillBadgesCount > 0);
 
   // compute how many participants completed the entire jam (19 badges + at least 1 arcade)
-  const fullCompletions = participants.filter(
+  const fullCompletionParticipants = participants.filter(
     (p) => (p.skillBadgesCount || 0) >= 19 && (p.arcadeGamesCount || 0) >= 1
-  ).length;
+  );
+  const fullCompletions = fullCompletionParticipants.length;
+
+  // additional counts requested
+  const nineteenPlusParticipants = participants.filter((p) => (p.skillBadgesCount || 0) >= 19);
+  const nineteenCount = nineteenPlusParticipants.length;
+  const fifteenPlusParticipants = participants.filter((p) => (p.skillBadgesCount || 0) >= 15);
+  const fifteenPlusCount = fifteenPlusParticipants.length;
 
   // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
@@ -421,6 +432,11 @@ export function AdminDashboard() {
     });
   };
 
+  // helper to open modal for arbitrary participant list
+  const openListModal = (title: string, participantsList: Participant[]) => {
+    setSelectedGroup({ name: title, participants: participantsList });
+  };
+
   // Close modal
   const closeModal = () => {
     setSelectedCourse(null);
@@ -478,8 +494,8 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top area: three small cards only */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-start">
+        {/* Top area: six small cards */}
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 items-start">
           {/* Small card: Total Participants (small) */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -491,14 +507,71 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* Small card: Active Participants (small) */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
+          {/* Small card: Active Participants (small) - clickable */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openListModal('Active Participants', activeParticipants)}
+            onKeyDown={(e) => { if (e.key === 'Enter') openListModal('Active Participants', activeParticipants); }}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3 cursor-pointer hover:shadow-md focus:outline-none"
+          >
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <div>
               <p className="text-[11px] text-slate-600">Active Participants</p>
               <p className="text-xl font-bold text-slate-800">{activeParticipants.length}</p>
+            </div>
+          </div>
+
+          {/* NEW Small card: Full Completions (19 badges + arcade) - clickable */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openListModal('Full Completions', fullCompletionParticipants)}
+            onKeyDown={(e) => { if (e.key === 'Enter') openListModal('Full Completions', fullCompletionParticipants); }}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3 cursor-pointer hover:shadow-md focus:outline-none"
+          >
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">Full Completions</p>
+              <p className="text-xl font-bold text-slate-800">{fullCompletions}</p>
+            </div>
+          </div>
+
+          {/* NEW Small card: 19+ Courses Count (badges >= 19) - clickable */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openListModal('19+ Courses', nineteenPlusParticipants)}
+            onKeyDown={(e) => { if (e.key === 'Enter') openListModal('19+ Courses', nineteenPlusParticipants); }}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3 cursor-pointer hover:shadow-md focus:outline-none"
+          >
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+              <Award className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">19+ Courses</p>
+              <p className="text-xl font-bold text-slate-800">{nineteenCount}</p>
+            </div>
+          </div>
+
+          {/* NEW Small card: 15+ Courses Count - clickable */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openListModal('15+ Courses', fifteenPlusParticipants)}
+            onKeyDown={(e) => { if (e.key === 'Enter') openListModal('15+ Courses', fifteenPlusParticipants); }}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3 cursor-pointer hover:shadow-md focus:outline-none"
+          >
+            <div className="w-10 h-10 bg-cyan-100 rounded-lg flex items-center justify-center">
+              <Star className="w-5 h-5 text-cyan-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">15+ Courses</p>
+              <p className="text-xl font-bold text-slate-800">{fifteenPlusCount}</p>
             </div>
           </div>
 
@@ -526,21 +599,24 @@ export function AdminDashboard() {
 
           {/* Vertical stack of three progress bars */}
           <div className="space-y-4 max-w-4xl">
-            {tierProgress.map((t) => (
-              <div key={t.id}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="text-sm font-medium text-slate-700">{t.title}</div>
-                  <div className="text-sm text-slate-600">{t.percent}%</div>
+            {tiers.map((t) => {
+              const pct = t.target > 0 ? Math.min(100, Math.round((fullCompletions / t.target) * 100)) : 0;
+              return (
+                <div key={t.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm font-medium text-slate-700">{t.title}</div>
+                    <div className="text-sm text-slate-600">{pct}%</div>
+                  </div>
+                  <div className="w-full h-4 bg-slate-100 rounded overflow-hidden">
+                    <div
+                      className={`${t.color} h-full rounded`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="text-[12px] text-slate-500 mt-1">Target: {t.target} full completions</div>
                 </div>
-                <div className="w-full h-4 bg-slate-100 rounded overflow-hidden">
-                  <div
-                    className={`${t.color} h-full rounded`}
-                    style={{ width: `${t.percent}%` }}
-                  />
-                </div>
-                <div className="text-[12px] text-slate-500 mt-1">Target: {t.target} full completions</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -652,9 +728,7 @@ export function AdminDashboard() {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        // simple cursor on pie
                         onClick={(data, index) => {
-                          // data is the payload; find group name by index
                           const groupName = distribution[index]?.name;
                           if (groupName) handlePieClick(groupName);
                         }}
@@ -686,7 +760,6 @@ export function AdminDashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={chartData}
-                        // give more horizontal room (left negative), reduce top/bottom margins
                         margin={{ top: 8, right: 16, left: -12, bottom: 32 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
@@ -696,14 +769,10 @@ export function AdminDashboard() {
                           interval={0}
                           angle={-35}
                           textAnchor="end"
-                          // reduce reserved height for rotated labels
                           height={40}
                         />
-                        {/* Hide Y axis but set domain so bars use full vertical range */}
                         <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
                         <Tooltip />
-
-                        {/* Make bars clickable by handling onClick on the Bar. Recharts passes payload and index. */}
                         <Bar
                           dataKey="value"
                           barSize={18}
