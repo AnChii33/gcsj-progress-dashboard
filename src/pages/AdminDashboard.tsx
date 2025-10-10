@@ -744,7 +744,7 @@ export function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={180} // Increased radius
+                    outerRadius={250} // Increased radius
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
@@ -805,8 +805,7 @@ export function AdminDashboard() {
                     <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={30
-                  } // Increased bar width
+                      barSize={30} // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
