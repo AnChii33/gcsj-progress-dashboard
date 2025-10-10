@@ -496,8 +496,8 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top area: six small cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 items-start">
+        {/* Top area: summary cards */}
+        <div className={`grid grid-cols-1 ${userRole === 'admin' ? 'md:grid-cols-6' : 'md:grid-cols-5'} gap-4 mb-4 items-start`}>
           {/* Small card: Total Participants (small) */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -602,7 +602,7 @@ export function AdminDashboard() {
           </div>
 
           {/* Vertical stack of three progress bars */}
-          <div className="space-y-4 max-w-4xl">
+          <div className="space-y-4">
             {tiers.map((t) => {
               const pct = t.target > 0 ? Math.min(100, Math.round((fullCompletions / t.target) * 100)) : 0;
               return (
