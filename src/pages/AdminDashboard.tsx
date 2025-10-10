@@ -738,7 +738,7 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="50%"
+                    cy="48%"
                     labelLine={false}
                     outerRadius={isMobile ? 120 : 220} // Responsive radius
                     fill="#8884d8"
