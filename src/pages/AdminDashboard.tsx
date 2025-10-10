@@ -140,7 +140,7 @@ export function AdminDashboard() {
         }
 
         const upload: CsvUpload = {
-          id: `u_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: generateUUID(),
           filename: item.file!.name,
           uploadDate: new Date().toISOString(),
           reportDate,
