@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // --- HARDCODED CREDENTIALS FOR CORE TEAM ---
-const CORE_TEAM_EMAIL = 'gdgoncampus';
+const CORE_TEAM_EMAIL = 'coreteam@stcet.edu.in';
 const CORE_TEAM_PASSWORD = 'CoreTeamSTCET2024!';
 // ---
 
@@ -57,10 +57,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('email')
         .eq('email', email)
         .eq('password', password)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to prevent errors on no match
 
       if (error || !data) {
-        // This is expected if the credentials are for the core team or are invalid
         return false;
       }
       
@@ -94,7 +93,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     newEmail: string,
     newPassword: string
   ): Promise<boolean> => {
-    // This function now only affects the admin user in the database
     try {
       const { error } = await supabase
         .from('admin_users')
