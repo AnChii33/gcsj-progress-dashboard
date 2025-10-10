@@ -394,7 +394,7 @@ export function AdminDashboard() {
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={20} // increased font size
+        fontSize={16} // increased font size
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
