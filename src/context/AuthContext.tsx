@@ -38,20 +38,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('admin_users')
-        .select('*')
+        .select('email, role') // Select only email and role
         .eq('email', email)
         .eq('password', password)
-        .maybeSingle();
+        .single();
 
       if (error || !data) {
+        console.error('Login failed:', error?.message);
         return false;
       }
 
       setIsAuthenticated(true);
-      setCurrentAdminEmail(email);
+      setCurrentAdminEmail(data.email);
       setUserRole(data.role);
       sessionStorage.setItem(AUTH_KEY, 'true');
-      sessionStorage.setItem(ADMIN_EMAIL_KEY, email);
+      sessionStorage.setItem(ADMIN_EMAIL_KEY, data.email);
       sessionStorage.setItem(USER_ROLE_KEY, data.role);
       return true;
     } catch (error) {
@@ -82,7 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password: newPassword,
           updated_at: new Date().toISOString()
         })
-        .eq('email', currentEmail);
+        .eq('email', currentEmail)
+        .eq('role', 'admin'); // Ensure only admins can change their own password this way
 
       if (error) {
         console.error('Update error:', error);
@@ -122,17 +124,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     newPassword: string
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      // First, find the current Core Team user to update
+      const { data: coreUser, error: findError } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('role', 'core_team')
+        .single();
+
+      if (findError || !coreUser) {
+        console.error('Could not find Core Team user to update:', findError);
+        return false;
+      }
+
+      const { error: updateError } = await supabase
         .from('admin_users')
         .update({
           email: newEmail,
           password: newPassword,
           updated_at: new Date().toISOString()
         })
-        .eq('role', 'core_team');
+        .eq('id', coreUser.id);
 
-      if (error) {
-        console.error('Error updating core team credentials:', error);
+      if (updateError) {
+        console.error('Error updating core team credentials:', updateError);
         return false;
       }
       return true;
