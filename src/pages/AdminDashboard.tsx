@@ -28,6 +28,7 @@ import {
   Cell,
   ResponsiveContainer,
   Legend,
+  Tooltip,
   BarChart,
   Bar,
   XAxis,
@@ -44,7 +45,9 @@ interface UploadItem {
 
 const COLORS = [
   '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
-  '#ec4899', '#f97316',
+  '#ec4899', '#f97316', '#06b6d4', '#84cc16', '#7c3aed',
+  '#0ea5a4', '#ef5350', '#fbbf24', '#34d399', '#60a5fa',
+  '#a78bfa', '#ff7ab6', '#f472b6', '#fb923c', '#22c55e'
 ];
 
 // Helper function to generate UUID v4
@@ -390,7 +393,7 @@ export function AdminDashboard() {
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={isMobile ? 10 : 12} // Responsive font size
+        fontSize={isMobile ? 10 : 16} // Responsive font size
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
@@ -738,7 +741,7 @@ export function AdminDashboard() {
                   <Pie
                     data={distribution}
                     cx="50%"
-                    cy="48%"
+                    cy="50%"
                     labelLine={false}
                     outerRadius={isMobile ? 120 : 220} // Responsive radius
                     fill="#8884d8"
@@ -757,6 +760,7 @@ export function AdminDashboard() {
                       />
                     ))}
                   </Pie>
+                  <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -797,6 +801,7 @@ export function AdminDashboard() {
                       height={40}
                     />
                     <YAxis hide domain={[0, (dataMax: number) => dataMax + 5]} />
+                    <Tooltip cursor={{fill: 'rgba(200, 200, 200, 0.2)'}} content={<></>} />
                     <Bar
                       dataKey="value"
                       barSize={35} // Increased bar width
