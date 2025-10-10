@@ -74,11 +74,12 @@ export function PublicDashboard() {
     return 'border border-slate-200';
   };
 
+  // VERY SMALL badge styling for mobile by default (text + padding + icon)
+  const baseBadgeClass = 'flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-bold';
+
   const getCompletionBadge = (participant: Participant) => {
     const badges = participant.skillBadgesCount;
     const arcade = participant.arcadeGamesCount;
-
-    const baseBadgeClass = 'flex items-center gap-1 px-3 py-1 rounded-full text-xs sm:text-[12px] font-bold';
 
     if (badges >= 19 && arcade >= 1) {
       return (
