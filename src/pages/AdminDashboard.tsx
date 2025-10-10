@@ -28,7 +28,7 @@ interface UploadItem {
 
 const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
 
-// Add this after the imports, before the AdminDashboard component
+// Helper function to generate UUID v4
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -131,13 +131,11 @@ export function AdminDashboard() {
           reportDate
         );
 
-        for (const participant of updatedParticipants) {
-          await database.upsertParticipant(participant);
-        }
+        // OPTIMIZED: Batch upsert all participants at once
+        await database.upsertParticipants(updatedParticipants);
 
-        for (const snapshot of snapshots) {
-          await database.addSnapshot(snapshot);
-        }
+        // OPTIMIZED: Batch insert all snapshots at once
+        await database.addSnapshots(snapshots);
 
         const upload: CsvUpload = {
           id: generateUUID(),
@@ -152,21 +150,19 @@ export function AdminDashboard() {
       setUploadStatus(`Successfully processed ${validItems.length} file(s)`);
       await loadData();
 
-      // Reset form after successful upload
       setTimeout(() => {
         setUploadItems([
           { file: null, date: new Date().toISOString().split('T')[0], id: Date.now().toString() },
         ]);
         setUploadStatus('');
       }, 3000);
-} catch (err) {
+    } catch (err) {
       console.error('CSV processing error:', err);
       let errorMessage = 'Failed to process CSV files';
       
       if (err instanceof Error) {
         errorMessage = err.message;
         
-        // Check for specific Supabase errors
         const supabaseError = (err as any)?.error;
         if (supabaseError) {
           if (supabaseError.code === '23505') {
@@ -204,20 +200,19 @@ export function AdminDashboard() {
   };
 
   const activeParticipants = participants.filter((p) => p.skillBadgesCount > 0);
-  const redeemedCount = participants.filter((p) => p.redemptionStatus === 'Yes').length;
 
+  // Updated badge distribution groups
   const distribution = [
     { name: '0 badges', value: participants.filter((p) => p.skillBadgesCount === 0).length },
-    { name: '1-2 badges', value: participants.filter((p) => p.skillBadgesCount >= 1 && p.skillBadgesCount <= 2).length },
-    { name: '3-4 badges', value: participants.filter((p) => p.skillBadgesCount >= 3 && p.skillBadgesCount <= 4).length },
-    { name: '5-6 badges', value: participants.filter((p) => p.skillBadgesCount >= 5 && p.skillBadgesCount <= 6).length },
-    { name: '7-8 badges', value: participants.filter((p) => p.skillBadgesCount >= 7 && p.skillBadgesCount <= 8).length },
-    { name: '9+ badges', value: participants.filter((p) => p.skillBadgesCount >= 9).length },
+    { name: '1-5 badges', value: participants.filter((p) => p.skillBadgesCount >= 1 && p.skillBadgesCount <= 5).length },
+    { name: '6-10 badges', value: participants.filter((p) => p.skillBadgesCount >= 6 && p.skillBadgesCount <= 10).length },
+    { name: '11-15 badges', value: participants.filter((p) => p.skillBadgesCount >= 11 && p.skillBadgesCount <= 15).length },
+    { name: '15+ badges', value: participants.filter((p) => p.skillBadgesCount > 15).length },
   ].filter((item) => item.value > 0);
 
-  const topPerformers = [...participants]
-    .sort((a, b) => b.skillBadgesCount - a.skillBadgesCount)
-    .slice(0, 10);
+  // Sort participants by badges (descending) for top performers and all participants list
+  const sortedParticipants = [...participants].sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
+  const topPerformers = sortedParticipants.slice(0, 10);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -257,7 +252,7 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -290,23 +285,6 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm text-slate-600">Total Uploads</p>
                 <p className="text-3xl font-bold text-slate-800">{uploads.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-rose-600" />
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Redemption Rate</p>
-                <p className="text-3xl font-bold text-slate-800">
-                  {participants.length > 0
-                    ? Math.round((redeemedCount / participants.length) * 100)
-                    : 0}
-                  %
-                </p>
               </div>
             </div>
           </div>
@@ -436,7 +414,7 @@ export function AdminDashboard() {
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+              <TrendingUp className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold text-slate-800">Top 10 Performers</h2>
             </div>
             <div className="space-y-3">
@@ -469,6 +447,45 @@ export function AdminDashboard() {
                 </p>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Users className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-bold text-slate-800">All Participants (Sorted by Badges)</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Rank</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Name</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
+                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Skill Badges</th>
+                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-700">Arcade Games</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedParticipants.length > 0 ? (
+                  sortedParticipants.map((participant, index) => (
+                    <tr key={participant.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 text-sm text-slate-600">{index + 1}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-slate-800">{participant.userName}</td>
+                      <td className="py-3 px-4 text-sm text-slate-600">{participant.userEmail}</td>
+                      <td className="py-3 px-4 text-sm text-center font-bold text-blue-600">{participant.skillBadgesCount}</td>
+                      <td className="py-3 px-4 text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-600">
+                      No participants yet. Upload CSV files to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -515,7 +532,3 @@ export function AdminDashboard() {
             )}
           </div>
         </div>
-      </main>
-    </div>
-  );
-}
