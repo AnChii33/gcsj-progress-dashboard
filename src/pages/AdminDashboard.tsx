@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { database } from '../lib/database';
@@ -74,6 +74,9 @@ export function AdminDashboard() {
     fullName: string;
     participants: Participant[];
   } | null>(null);
+
+  // Ref to measure chart wrapper width for column click detection
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadData();
@@ -226,6 +229,11 @@ export function AdminDashboard() {
 
   const activeParticipants = participants.filter((p) => p.skillBadgesCount > 0);
 
+  // compute how many participants completed the entire jam (19 badges + at least 1 arcade)
+  const fullCompletions = participants.filter(
+    (p) => (p.skillBadgesCount || 0) >= 19 && (p.arcadeGamesCount || 0) >= 1
+  ).length;
+
   // Updated badge distribution groups
   const distribution = [
     { name: '0 badges', value: participants.filter((p) => p.skillBadgesCount === 0).length },
@@ -268,7 +276,7 @@ export function AdminDashboard() {
 
   /**
    * chartData: compute counts and also include the actual participant lists for each course (C1..C19) and ARC.
-   * This will let us open a modal with names/emails on bar click.
+   * This will let us open a modal with names/emails on column click.
    */
   const chartData = useMemo(() => {
     // init arrays
@@ -347,8 +355,49 @@ export function AdminDashboard() {
     });
   };
 
+  // NEW: click on entire chart column - maps click X to column index
+  const onChartWrapperClick = (e: React.MouseEvent) => {
+    if (!chartWrapperRef.current) return;
+    const rect = chartWrapperRef.current.getBoundingClientRect();
+    const total = chartData.length;
+    if (total === 0) return;
+
+    // compute relative X inside the wrapper
+    const relX = e.clientX - rect.left;
+    // clamp
+    const clampedX = Math.max(0, Math.min(relX, rect.width));
+    // column width (equal buckets)
+    const columnWidth = rect.width / total;
+    // index
+    let idx = Math.floor(clampedX / columnWidth);
+    if (idx < 0) idx = 0;
+    if (idx >= total) idx = total - 1;
+
+    const entry = chartData[idx];
+    if (entry) {
+      setSelectedCourse({
+        name: entry.name,
+        fullName: entry.fullName,
+        participants: entry.participants || [],
+      });
+    }
+  };
+
   // Close modal
   const closeModal = () => setSelectedCourse(null);
+
+  // Tier targets
+  const tiers = [
+    { id: 'tier1', title: 'Tier 1 (100)', target: 100, color: 'bg-blue-600' },
+    { id: 'tier2', title: 'Tier 2 (70)', target: 70, color: 'bg-green-600' },
+    { id: 'tier3', title: 'Tier 3 (50)', target: 50, color: 'bg-amber-400' },
+  ];
+
+  // percent for each tier
+  const tierProgress = tiers.map((t) => {
+    const pct = t.target > 0 ? Math.min(100, Math.round((fullCompletions / t.target) * 100)) : 0;
+    return { ...t, percent: pct };
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -388,44 +437,73 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-[11px] sm:text-sm text-slate-600">Total Participants</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{participants.length}</p>
-              </div>
+        {/* Top area: make 5 columns on md: three small cards + wide tier card */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 items-start">
+          {/* Small card: Total Participants (small) */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">Total Participants</p>
+              <p className="text-xl font-bold text-slate-800">{participants.length}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-[11px] sm:text-sm text-slate-600">Active Participants</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{activeParticipants.length}</p>
-              </div>
+          {/* Small card: Active Participants (small) */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">Active Participants</p>
+              <p className="text-xl font-bold text-slate-800">{activeParticipants.length}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-amber-600" />
-              </div>
+          {/* Small card: Total Uploads (small) */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-[11px] text-slate-600">Total Uploads</p>
+              <p className="text-xl font-bold text-slate-800">{uploads.length}</p>
+            </div>
+          </div>
+
+          {/* Tier progress card (wide) spans 2 cols on md+ */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:col-span-2">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-[11px] sm:text-sm text-slate-600">Total Uploads</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-800">{uploads.length}</p>
+                <h3 className="text-sm font-bold text-slate-800">Tier Progress (Full Completions)</h3>
+                <p className="text-xs text-slate-600 mt-1">Participants who completed all 19 badges + arcade</p>
               </div>
+              <div className="text-sm font-medium text-slate-700">{fullCompletions} completed</div>
+            </div>
+
+            {/* Vertical stack of three progress bars */}
+            <div className="space-y-4">
+              {tierProgress.map((t) => (
+                <div key={t.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-xs font-medium text-slate-700">{t.title}</div>
+                    <div className="text-xs text-slate-600">{t.percent}%</div>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 rounded overflow-hidden">
+                    <div
+                      className={`${t.color} h-full rounded`}
+                      style={{ width: `${t.percent}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">Target: {t.target} full completions</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
+        {/* Upload CSV card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Upload className="w-5 h-5 text-blue-600" />
@@ -546,13 +624,18 @@ export function AdminDashboard() {
 
                 {/* BAR CHART: taller container, smaller bottom margin so plotting area fills lower half */}
                 <div className="mt-4">
-                  <div className="h-[360px] sm:h-[520px]"> {/* mobile 360px, desktop 520px */}
+                  {/* wrapper is clickable — clicking anywhere in the wrapper maps to a column */}
+                  <div
+                    ref={chartWrapperRef}
+                    onClick={onChartWrapperClick}
+                    className="h-[360px] sm:h-[520px] cursor-pointer"
+                    aria-hidden
+                  >
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={chartData}
                         // give more horizontal room (left negative), reduce top/bottom margins
                         margin={{ top: 8, right: 16, left: -12, bottom: 32 }}
-                        // optional: barCategoryGap="20%"
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis
@@ -573,8 +656,7 @@ export function AdminDashboard() {
                           dataKey="value"
                           barSize={18}
                           isAnimationActive={false}
-                          onClick={(payload: any, index: number) => {
-                            // payload contains payload.payload which is the data entry
+                          onClick={(payload: any) => {
                             handleBarClick(payload);
                           }}
                         >
