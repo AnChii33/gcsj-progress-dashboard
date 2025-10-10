@@ -530,6 +530,6 @@ export function AdminDashboard() {
                 No uploads yet. Upload your first CSV file to get started.
               </p>
             )}
-          </div>
+
 
     
