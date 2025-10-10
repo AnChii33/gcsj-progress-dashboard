@@ -25,6 +25,36 @@ export const database = {
     }));
   },
 
+  // OPTIMIZED: Batch upsert all participants at once
+  async upsertParticipants(participants: Participant[]): Promise<void> {
+    const batchSize = 100; // Supabase handles up to ~1000 rows, but 100 is safer
+    
+    for (let i = 0; i < participants.length; i += batchSize) {
+      const batch = participants.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('participants')
+        .upsert(
+          batch.map(p => ({
+            id: p.id,
+            user_name: p.userName,
+            user_email: p.userEmail,
+            profile_url: p.profileUrl,
+            profile_status: p.profileStatus,
+            redemption_status: p.redemptionStatus,
+            all_completed: p.allCompleted,
+            skill_badges_count: p.skillBadgesCount,
+            skill_badge_names: p.skillBadgeNames,
+            arcade_games_count: p.arcadeGamesCount,
+            arcade_game_names: p.arcadeGameNames,
+            updated_at: new Date().toISOString(),
+          })),
+          { onConflict: 'user_email' }
+        );
+
+      if (error) throw error;
+    }
+  },
+
   async upsertParticipant(participant: Participant): Promise<void> {
     const { error } = await supabase
       .from('participants')
@@ -110,6 +140,31 @@ export const database = {
     }));
   },
 
+  // OPTIMIZED: Batch insert all snapshots at once
+  async addSnapshots(snapshots: DailySnapshot[]): Promise<void> {
+    const batchSize = 100;
+    
+    for (let i = 0; i < snapshots.length; i += batchSize) {
+      const batch = snapshots.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from('daily_snapshots')
+        .upsert(
+          batch.map(s => ({
+            id: s.id,
+            participant_id: s.participantId,
+            snapshot_date: s.date,
+            skill_badges_count: s.skillBadgesCount,
+            arcade_games_count: s.arcadeGamesCount,
+            skill_badge_names: s.skillBadgeNames,
+            arcade_game_names: s.arcadeGameNames,
+          })),
+          { onConflict: 'participant_id,snapshot_date' }
+        );
+
+      if (error) throw error;
+    }
+  },
+
   async addSnapshot(snapshot: DailySnapshot): Promise<void> {
     const { error } = await supabase
       .from('daily_snapshots')
@@ -158,6 +213,7 @@ export const database = {
   },
 
   async deleteUpload(uploadId: string, reportDate: string): Promise<void> {
+    // Delete snapshots for this date
     const { error: snapshotsError } = await supabase
       .from('daily_snapshots')
       .delete()
@@ -165,6 +221,7 @@ export const database = {
 
     if (snapshotsError) throw snapshotsError;
 
+    // Get all remaining snapshots to find orphaned participants
     const { data: allSnapshots } = await supabase
       .from('daily_snapshots')
       .select('participant_id');
@@ -173,18 +230,28 @@ export const database = {
       (allSnapshots || []).map((s) => s.participant_id)
     );
 
+    // Get all participants
     const { data: allParticipants } = await supabase
       .from('participants')
       .select('id');
 
+    // OPTIMIZED: Batch delete orphaned participants
     if (allParticipants) {
-      for (const participant of allParticipants) {
-        if (!activeParticipantIds.has(participant.id)) {
-          await supabase.from('participants').delete().eq('id', participant.id);
-        }
+      const orphanedIds = allParticipants
+        .filter(p => !activeParticipantIds.has(p.id))
+        .map(p => p.id);
+
+      if (orphanedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('participants')
+          .delete()
+          .in('id', orphanedIds);
+
+        if (deleteError) throw deleteError;
       }
     }
 
+    // Delete upload record
     const { error: uploadError } = await supabase
       .from('csv_uploads')
       .delete()
