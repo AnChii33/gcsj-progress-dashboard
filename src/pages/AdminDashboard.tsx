@@ -143,6 +143,7 @@ export function AdminDashboard() {
       setUploadStatus(`Successfully processed ${validItems.length} file(s)`);
       await loadData();
 
+      // Reset form after successful upload
       setTimeout(() => {
         setUploadItems([
           { file: null, date: new Date().toISOString().split('T')[0], id: Date.now().toString() },
@@ -150,7 +151,23 @@ export function AdminDashboard() {
         setUploadStatus('');
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process CSV files');
+      console.error('CSV processing error:', err);
+      let errorMessage = 'Failed to process CSV files';
+      
+      if (err instanceof Error) {
+        // If it's a Supabase error with details
+        const supabaseError = (err as any)?.error;
+        if (supabaseError) {
+          errorMessage = `Database error: ${supabaseError.message || supabaseError}`;
+        } else {
+          // Regular Error object
+          errorMessage = err.message;
+        }
+      }
+      
+      // Set a user-friendly error message
+      setError(errorMessage);
+      setUploadStatus('');
     } finally {
       setUploading(false);
     }
