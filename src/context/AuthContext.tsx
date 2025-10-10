@@ -9,7 +9,7 @@ interface AuthContextType {
   logout: () => void;
   changeCredentials: (currentEmail: string, newEmail: string, newPassword: string) => Promise<boolean>;
   getCoreTeamCredentials: () => Promise<{ email: string; password: string } | null>;
-  updateCoreTeamCredentials: (email: string, newEmail: string, newPassword: string) => Promise<boolean>;
+  updateCoreTeamCredentials: (newEmail: string, newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,8 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const getCoreTeamCredentials = async (): Promise<{ email: string; password: string } | null> => {
     try {
       const { data, error } = await supabase
-        .from('core_team_credentials')
+        .from('admin_users')
         .select('email, password')
+        .eq('role', 'core_team')
         .single();
 
       if (error) {
@@ -117,15 +118,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCoreTeamCredentials = async (
-    email: string,
     newEmail: string,
     newPassword: string
   ): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('core_team_credentials')
-        .update({ email: newEmail, password: newPassword, updated_at: new Date() })
-        .eq('email', email);
+        .from('admin_users')
+        .update({
+          email: newEmail,
+          password: newPassword,
+          updated_at: new Date().toISOString()
+        })
+        .eq('role', 'core_team');
 
       if (error) {
         console.error('Error updating core team credentials:', error);
@@ -138,9 +142,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-
   return (
-    <AuthContext.Provider value={{ isAuthenticated, currentAdminEmail, userRole, login, logout, changeCredentials, getCoreTeamCredentials, updateCoreTeamCredentials }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        currentAdminEmail,
+        userRole,
+        login,
+        logout,
+        changeCredentials,
+        getCoreTeamCredentials,
+        updateCoreTeamCredentials
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
