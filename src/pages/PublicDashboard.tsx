@@ -128,10 +128,10 @@ export function PublicDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">
-                Google Cloud Study Jam Public Progress Board
+                Google Cloud Study Jam Progress
               </h1>
               <p className="text-slate-600 mt-1">
-                St. Thomas' College of Engineering & Technology - Kolkata
+                St. Thomas' College of Engineering & Technology - Kolkata, 2025-26
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-600">
