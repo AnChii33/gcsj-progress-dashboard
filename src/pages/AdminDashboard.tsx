@@ -254,14 +254,25 @@ export function AdminDashboard() {
 
   // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
+    // Define groups in the desired order
+    const orderedGroupNames = [
+      '0 Badges',
+      '1-4 Badges',
+      '5-9 Badges',
+      '10-14 Badges',
+      '15-18 Badges',
+      '19 Badges',
+      '19+ Arcade',
+    ];
+
     const groups: { [key: string]: { name: string; participants: Participant[] } } = {
-      '0': { name: '0 Badges', participants: [] },
-      '1-4': { name: '1-4 Badges', participants: [] },
-      '5-9': { name: '5-9 Badges', participants: [] },
-      '10-14': { name: '10-14 Badges', participants: [] },
-      '15-18': { name: '15-18 Badges', participants: [] },
-      '19': { name: '19 Badges', participants: [] },
-      '19+arcade': { name: '19+ Arcade', participants: [] },
+      '0 Badges': { name: '0 Badges', participants: [] },
+      '1-4 Badges': { name: '1-4 Badges', participants: [] },
+      '5-9 Badges': { name: '5-9 Badges', participants: [] },
+      '10-14 Badges': { name: '10-14 Badges', participants: [] },
+      '15-18 Badges': { name: '15-18 Badges', participants: [] },
+      '19 Badges': { name: '19 Badges', participants: [] },
+      '19+ Arcade': { name: '19+ Arcade', participants: [] },
     };
 
     participants.forEach((p) => {
@@ -269,23 +280,24 @@ export function AdminDashboard() {
       const arcade = p.arcadeGamesCount || 0;
 
       if (badges >= 19 && arcade > 0) {
-        groups['19+arcade'].participants.push(p);
+        groups['19+ Arcade'].participants.push(p);
       } else if (badges === 19) {
-        groups['19'].participants.push(p);
+        groups['19 Badges'].participants.push(p);
       } else if (badges >= 15) {
-        groups['15-18'].participants.push(p);
+        groups['15-18 Badges'].participants.push(p);
       } else if (badges >= 10) {
-        groups['10-14'].participants.push(p);
+        groups['10-14 Badges'].participants.push(p);
       } else if (badges >= 5) {
-        groups['5-9'].participants.push(p);
+        groups['5-9 Badges'].participants.push(p);
       } else if (badges >= 1) {
-        groups['1-4'].participants.push(p);
+        groups['1-4 Badges'].participants.push(p);
       } else {
-        groups['0'].participants.push(p);
+        groups['0 Badges'].participants.push(p);
       }
     });
 
-    return Object.values(groups);
+    // Return the groups in the predefined order
+    return orderedGroupNames.map(name => groups[name]);
   }, [participants]);
 
   const distribution = distributionDetailed
@@ -376,14 +388,14 @@ export function AdminDashboard() {
     const { x, y, width, value } = props;
     if (value === 0 || value == null) return null;
     const cx = x + width / 2;
-    const cy = y - 6; // slight offset above the bar
+    const cy = y - 8; // adjusted offset for larger font
     return (
       <text
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={9}
-        fontWeight={300 as any}
+        fontSize={11} // increased font size
+        fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
       >
@@ -716,7 +728,7 @@ export function AdminDashboard() {
             )}
           </div>
         )}
-
+        
         {/* Badge Distribution Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
@@ -724,7 +736,7 @@ export function AdminDashboard() {
             <h2 className="text-sm sm:text-lg font-bold text-slate-800">Badge Distribution</h2>
           </div>
           {distribution.length > 0 ? (
-            <div className="h-80 sm:h-96">
+            <div className="h-96 sm:h-[450px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -732,7 +744,7 @@ export function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={120}
+                    outerRadius={160} // Increased radius
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
@@ -778,7 +790,7 @@ export function AdminDashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
-                    margin={{ top: 8, right: 16, left: 16, bottom: 32 }}
+                    margin={{ top: 20, right: 16, left: 16, bottom: 32 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
@@ -789,11 +801,11 @@ export function AdminDashboard() {
                       textAnchor="end"
                       height={40}
                     />
-                    <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
+                    <YAxis hide domain={[0, (dataMax: number) => dataMax + 5]} />
                     <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={18}
+                      barSize={22} // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
