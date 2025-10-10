@@ -63,16 +63,3 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO admin_users (email, password, role)
 VALUES ('coreteam@stcet.edu.in', 'CoreTeamSTCET2024!', 'core_team')
 ON CONFLICT (email) DO NOTHING;
-
--- Create core_team_credentials table
-CREATE TABLE IF NOT EXISTS core_team_credentials (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text UNIQUE NOT NULL,
-  password text NOT NULL,
-  updated_at timestamptz DEFAULT now()
-);
-
-
-INSERT INTO core_team_credentials (email, password)
-VALUES ('coreteam@stcet.edu.in', 'CoreTeamSTCET2024!')
-ON CONFLICT (email) DO NOTHING;
