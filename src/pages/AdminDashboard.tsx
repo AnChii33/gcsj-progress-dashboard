@@ -534,7 +534,7 @@ export function AdminDashboard() {
         </div>
       </main>
     </div>
-    )
+    );
 
 
     
