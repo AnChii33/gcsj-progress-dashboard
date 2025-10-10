@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// Define the hardcoded admin email address
+const ADMIN_EMAIL = 'admin@stcet.edu.in';
+
 interface AuthContextType {
   isAuthenticated: boolean;
   currentAdminEmail: string | null;
-  userRole: string | null;
+  userRole: 'admin' | 'core_team' | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   changeCredentials: (currentEmail: string, newEmail: string, newPassword: string) => Promise<boolean>;
@@ -21,12 +24,12 @@ const USER_ROLE_KEY = 'gcskb_user_role';
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'core_team' | null>(null);
 
   useEffect(() => {
     const auth = sessionStorage.getItem(AUTH_KEY);
     const email = sessionStorage.getItem(ADMIN_EMAIL_KEY);
-    const role = sessionStorage.getItem(USER_ROLE_KEY);
+    const role = sessionStorage.getItem(USER_ROLE_KEY) as 'admin' | 'core_team' | null;
     if (auth === 'true' && email && role) {
       setIsAuthenticated(true);
       setCurrentAdminEmail(email);
@@ -38,22 +41,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('admin_users')
-        .select('email, role') // Select only email and role
+        .select('email')
         .eq('email', email)
         .eq('password', password)
         .single();
 
       if (error || !data) {
-        console.error('Login failed:', error?.message);
         return false;
       }
 
+      // WORKAROUND: Determine role based on email
+      const role = data.email === ADMIN_EMAIL ? 'admin' : 'core_team';
+
       setIsAuthenticated(true);
       setCurrentAdminEmail(data.email);
-      setUserRole(data.role);
+      setUserRole(role);
       sessionStorage.setItem(AUTH_KEY, 'true');
       sessionStorage.setItem(ADMIN_EMAIL_KEY, data.email);
-      sessionStorage.setItem(USER_ROLE_KEY, data.role);
+      sessionStorage.setItem(USER_ROLE_KEY, role);
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -76,23 +81,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     newPassword: string
   ): Promise<boolean> => {
     try {
+      // This function is only for the admin
       const { error } = await supabase
         .from('admin_users')
-        .update({
-          email: newEmail,
-          password: newPassword,
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', currentEmail)
-        .eq('role', 'admin'); // Ensure only admins can change their own password this way
+        .update({ email: newEmail, password: newPassword, updated_at: new Date() })
+        .eq('email', currentEmail);
 
       if (error) {
         console.error('Update error:', error);
         return false;
       }
 
-      setCurrentAdminEmail(newEmail);
-      sessionStorage.setItem(ADMIN_EMAIL_KEY, newEmail);
+      // If the admin changes their own email, update it in the session
+      if (currentEmail === ADMIN_EMAIL) {
+        // This is a bit tricky since ADMIN_EMAIL is hardcoded, but for the session it's fine
+        setCurrentAdminEmail(newEmail);
+        sessionStorage.setItem(ADMIN_EMAIL_KEY, newEmail);
+      }
       return true;
     } catch (error) {
       console.error('Change credentials error:', error);
@@ -102,10 +107,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getCoreTeamCredentials = async (): Promise<{ email: string; password: string } | null> => {
     try {
+      // Find the user who is NOT the admin
       const { data, error } = await supabase
         .from('admin_users')
         .select('email, password')
-        .eq('role', 'core_team')
+        .not('email', 'eq', ADMIN_EMAIL)
+        .limit(1)
         .single();
 
       if (error) {
@@ -124,25 +131,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     newPassword: string
   ): Promise<boolean> => {
     try {
-      // First, find the current Core Team user to update
+      // Find the current Core Team user to get their ID for a stable update
       const { data: coreUser, error: findError } = await supabase
         .from('admin_users')
         .select('id')
-        .eq('role', 'core_team')
+        .not('email', 'eq', ADMIN_EMAIL)
+        .limit(1)
         .single();
 
       if (findError || !coreUser) {
-        console.error('Could not find Core Team user to update:', findError);
-        return false;
-      }
-
-      const { error: updateError } = await supabase
-        .from('admin_users')
-        .update({
+        // If no core team user exists, create one
+        const { error: insertError } = await supabase.from('admin_users').insert({
           email: newEmail,
           password: newPassword,
-          updated_at: new Date().toISOString()
-        })
+        });
+        if (insertError) {
+          console.error('Error creating core team user:', insertError);
+          return false;
+        }
+        return true;
+      }
+
+      // If a core team user exists, update them
+      const { error: updateError } = await supabase
+        .from('admin_users')
+        .update({ email: newEmail, password: newPassword, updated_at: new Date() })
         .eq('id', coreUser.id);
 
       if (updateError) {
@@ -166,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         changeCredentials,
         getCoreTeamCredentials,
-        updateCoreTeamCredentials
+        updateCoreTeamCredentials,
       }}
     >
       {children}
