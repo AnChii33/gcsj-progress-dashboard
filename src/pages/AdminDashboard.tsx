@@ -394,7 +394,7 @@ export function AdminDashboard() {
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={12} // increased font size
+        fontSize={20} // increased font size
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
@@ -762,7 +762,7 @@ export function AdminDashboard() {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 20 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
