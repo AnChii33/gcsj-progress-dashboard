@@ -20,6 +20,7 @@ import {
   Trophy,
   Award,
   Star,
+  PieChart as PieChartIcon,
 } from 'lucide-react';
 import {
   PieChart,
@@ -253,37 +254,46 @@ export function AdminDashboard() {
 
   // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
-    const groups: {
-      name: string;
-      description?: string;
-      participants: Participant[];
-    }[] = [
-      { name: '0 badges', description: '0 badges', participants: [] },
-      { name: '1-5 badges', description: '1-5 badges', participants: [] },
-      { name: '6-10 badges', description: '6-10 badges', participants: [] },
-      { name: '11-15 badges', description: '11-15 badges', participants: [] },
-      { name: '15+ badges', description: '15+ badges', participants: [] },
-    ];
+    const groups: { [key: string]: { name: string; participants: Participant[] } } = {
+      '0': { name: '0 Badges', participants: [] },
+      '1-4': { name: '1-4 Badges', participants: [] },
+      '5-9': { name: '5-9 Badges', participants: [] },
+      '10-14': { name: '10-14 Badges', participants: [] },
+      '15-18': { name: '15-18 Badges', participants: [] },
+      '19': { name: '19 Badges', participants: [] },
+      '19+arcade': { name: '19+ Arcade', participants: [] },
+    };
 
     participants.forEach((p) => {
-      const count = p.skillBadgesCount || 0;
-      if (count === 0) groups[0].participants.push(p);
-      else if (count >= 1 && count <= 5) groups[1].participants.push(p);
-      else if (count >= 6 && count <= 10) groups[2].participants.push(p);
-      else if (count >= 11 && count <= 15) groups[3].participants.push(p);
-      else if (count > 15) groups[4].participants.push(p);
+      const badges = p.skillBadgesCount || 0;
+      const arcade = p.arcadeGamesCount || 0;
+
+      if (badges >= 19 && arcade > 0) {
+        groups['19+arcade'].participants.push(p);
+      } else if (badges === 19) {
+        groups['19'].participants.push(p);
+      } else if (badges >= 15) {
+        groups['15-18'].participants.push(p);
+      } else if (badges >= 10) {
+        groups['10-14'].participants.push(p);
+      } else if (badges >= 5) {
+        groups['5-9'].participants.push(p);
+      } else if (badges >= 1) {
+        groups['1-4'].participants.push(p);
+      } else {
+        groups['0'].participants.push(p);
+      }
     });
 
-    return groups.map((g) => ({ name: g.name, description: g.description, participants: g.participants }));
+    return Object.values(groups);
   }, [participants]);
 
   const distribution = distributionDetailed
     .map((g) => ({ name: g.name, value: g.participants.length }))
     .filter((item) => item.value > 0);
 
-  // Sort participants by badges (descending) for top performers and all participants list
+  // Sort participants by badges (descending) for all participants list
   const sortedParticipants = [...participants].sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
-  const topPerformers = sortedParticipants.slice(0, 10);
 
   /**
    * Course full names (first 19 are C1..C19, final item is the arcade/game which we label ARC)
@@ -427,7 +437,6 @@ export function AdminDashboard() {
     if (!group) return;
     setSelectedGroup({
       name: group.name,
-      description: group.description,
       participants: group.participants,
     });
   };
@@ -449,12 +458,6 @@ export function AdminDashboard() {
     { id: 'tier2', title: 'Tier 2 (70)', target: 70, color: 'bg-green-600' },
     { id: 'tier3', title: 'Tier 3 (50)', target: 50, color: 'bg-amber-400' },
   ];
-
-  // percent for each tier
-  const tierProgress = tiers.map((t) => {
-    const pct = t.target > 0 ? Math.min(100, Math.round((fullCompletions / t.target) * 100)) : 0;
-    return { ...t, percent: pct };
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -714,148 +717,118 @@ export function AdminDashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
-              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Badge Distribution</h2>
-            </div>
-            {distribution.length > 0 ? (
-              <>
-                {/* PIE chart area */}
-                <div className="h-56 sm:h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={distribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        onClick={(data, index) => {
-                          const groupName = distribution[index]?.name;
-                          if (groupName) handlePieClick(groupName);
-                        }}
-                      >
-                        {distribution.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => handlePieClick(entry.name)}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* BAR CHART: taller container, smaller bottom margin so plotting area fills lower half */}
-                <div className="mt-4">
-                  {/* wrapper is clickable — clicking anywhere in the wrapper maps to a column */}
-                  <div
-                    ref={chartWrapperRef}
-                    onClick={onChartWrapperClick}
-                    className="h-[360px] sm:h-[520px] cursor-pointer"
-                    aria-hidden
+        {/* Badge Distribution Pie Chart */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <PieChartIcon className="w-5 h-5 text-blue-600" />
+            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Badge Distribution</h2>
+          </div>
+          {distribution.length > 0 ? (
+            <div className="h-80 sm:h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={distribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                    onClick={(data, index) => {
+                      const groupName = distribution[index]?.name;
+                      if (groupName) handlePieClick(groupName);
+                    }}
                   >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={chartData}
-                        margin={{ top: 8, right: 16, left: 16, bottom: 32 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fontSize: 10 }}
-                          interval={0}
-                          angle={-35}
-                          textAnchor="end"
-                          height={40}
-                        />
-                        <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
-                        <Tooltip />
-                        <Bar
-                          dataKey="value"
-                          barSize={18}
-                          isAnimationActive={false}
-                          onClick={(payload: any) => {
-                            handleBarClick(payload);
-                          }}
-                        >
-                          {chartData.map((entry, idx) => (
-                            <Cell key={`barcell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-                          ))}
-                          <LabelList dataKey="value" content={renderTinyTopLabel} />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Legend mapping C1..C19 + ARC to full names */}
-                  <div className="mt-2 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {chartData.map((d, idx) => (
-                      <div className="flex items-start gap-2" key={d.name}>
-                        <span
-                          className="w-3 h-3 rounded-sm mt-1 shrink-0"
-                          style={{ background: COLORS[idx % COLORS.length] }}
-                        />
-                        <div className="truncate">
-                          <span className="font-medium mr-1">{d.name}:</span>
-                          <span className="text-[11px]">{d.fullName}</span>
-                        </div>
-                      </div>
+                    {distribution.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handlePieClick(entry.name)}
+                      />
                     ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
-                No data available. Upload CSV files to see distribution.
-              </p>
-            )}
-          </div>
+                  </Pie>
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
+              No data available to display chart.
+            </p>
+          )}
+        </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              <h2 className="text-sm sm:text-lg font-bold text-slate-800">Top 10 Performers</h2>
-            </div>
-            <div className="space-y-2">
-              {topPerformers.length > 0 ? (
-                topPerformers.map((participant, index) => (
-                  <div
-                    key={participant.id}
-                    className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
+        {/* Course Completion Bar Chart */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="w-5 h-5 text-blue-600" />
+            <h2 className="text-sm sm:text-lg font-bold text-slate-800">Course Completions</h2>
+          </div>
+          {chartData.length > 0 ? (
+            <>
+              <div
+                ref={chartWrapperRef}
+                onClick={onChartWrapperClick}
+                className="h-[360px] sm:h-[520px] cursor-pointer"
+                aria-hidden
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 8, right: 16, left: 16, bottom: 32 }}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm sm:text-base font-bold text-slate-400 w-6">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-medium text-slate-800 text-xs sm:text-sm">{participant.userName}</p>
-                        <p className="text-xs sm:text-sm text-slate-600">{participant.userEmail}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm sm:text-base font-bold text-blue-600">
-                        {participant.skillBadgesCount}
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-600">badges</p>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10 }}
+                      interval={0}
+                      angle={-35}
+                      textAnchor="end"
+                      height={40}
+                    />
+                    <YAxis hide domain={[0, (dataMax: number) => dataMax + 3]} />
+                    <Tooltip />
+                    <Bar
+                      dataKey="value"
+                      barSize={18}
+                      isAnimationActive={false}
+                      onClick={(payload: any) => {
+                        handleBarClick(payload);
+                      }}
+                    >
+                      {chartData.map((entry, idx) => (
+                        <Cell key={`barcell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" content={renderTinyTopLabel} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Legend mapping C1..C19 + ARC to full names */}
+              <div className="mt-2 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {chartData.map((d, idx) => (
+                  <div className="flex items-start gap-2" key={d.name}>
+                    <span
+                      className="w-3 h-3 rounded-sm mt-1 shrink-0"
+                      style={{ background: COLORS[idx % COLORS.length] }}
+                    />
+                    <div className="truncate">
+                      <span className="font-medium mr-1">{d.name}:</span>
+                      <span className="text-[11px]">{d.fullName}</span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
-                  No data available. Upload CSV files to see top performers.
-                </p>
-              )}
-            </div>
-          </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-slate-600 py-6 text-xs sm:text-sm">
+              No data available to display chart.
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
