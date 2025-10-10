@@ -128,7 +128,7 @@ export function PublicDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">
-                Google Cloud Skills Boost Progress
+                Google Cloud Study Jam Public Progress Board
               </h1>
               <p className="text-slate-600 mt-1">
                 St. Thomas' College of Engineering & Technology - Kolkata
