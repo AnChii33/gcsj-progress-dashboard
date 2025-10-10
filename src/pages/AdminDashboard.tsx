@@ -744,7 +744,7 @@ export function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={225} // Increased radius
+                    outerRadius={215} // Increased radius
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
