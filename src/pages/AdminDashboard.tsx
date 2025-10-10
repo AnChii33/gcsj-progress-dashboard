@@ -262,7 +262,7 @@ export function AdminDashboard() {
       '10-14 Badges',
       '15-18 Badges',
       '19 Badges',
-      '19+ Arcade',
+      '19 Badges + Arcade',
     ];
 
     const groups: { [key: string]: { name: string; participants: Participant[] } } = {
@@ -272,7 +272,7 @@ export function AdminDashboard() {
       '10-14 Badges': { name: '10-14 Badges', participants: [] },
       '15-18 Badges': { name: '15-18 Badges', participants: [] },
       '19 Badges': { name: '19 Badges', participants: [] },
-      '19+ Arcade': { name: '19+ Arcade', participants: [] },
+      '19 Badges + Arcade': { name: '19 Badges + Arcade', participants: [] },
     };
 
     participants.forEach((p) => {
@@ -280,7 +280,7 @@ export function AdminDashboard() {
       const arcade = p.arcadeGamesCount || 0;
 
       if (badges >= 19 && arcade > 0) {
-        groups['19+ Arcade'].participants.push(p);
+        groups['19 Badges + Arcade'].participants.push(p);
       } else if (badges === 19) {
         groups['19 Badges'].participants.push(p);
       } else if (badges >= 15) {
@@ -394,7 +394,7 @@ export function AdminDashboard() {
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={11} // increased font size
+        fontSize={12} // increased font size
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
@@ -736,7 +736,7 @@ export function AdminDashboard() {
             <h2 className="text-sm sm:text-lg font-bold text-slate-800">Badge Distribution</h2>
           </div>
           {distribution.length > 0 ? (
-            <div className="h-96 sm:h-[450px]">
+            <div className="h-96 sm:h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -744,7 +744,7 @@ export function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={160} // Increased radius
+                    outerRadius={180} // Increased radius
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
@@ -805,7 +805,7 @@ export function AdminDashboard() {
                     <Tooltip />
                     <Bar
                       dataKey="value"
-                      barSize={22} // Increased bar width
+                      barSize={25} // Increased bar width
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
