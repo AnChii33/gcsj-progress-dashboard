@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../lib/database';
 import { Participant } from '../types';
-import { Search, TrendingUp, Award, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
+import { Search, TrendingUp, Award, CheckCircle, XCircle, ExternalLink, Target, Zap, Star, Trophy } from 'lucide-react';
 
 export function PublicDashboard() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -58,6 +58,18 @@ export function PublicDashboard() {
     if (badges >= 19) {
       return 'border-2 border-amber-500 bg-gradient-to-br from-amber-50 to-yellow-50';
     }
+    // 15-18 badges (almost there!)
+    if (badges >= 15 && badges <= 18) {
+      return 'border-2 border-purple-500 bg-gradient-to-br from-purple-50 to-violet-50';
+    }
+    // 10-14 badges (great progress!)
+    if (badges >= 10 && badges <= 14) {
+      return 'border-2 border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50';
+    }
+    // 5-9 badges (good start!)
+    if (badges >= 5 && badges <= 9) {
+      return 'border-2 border-cyan-500 bg-gradient-to-br from-cyan-50 to-sky-50';
+    }
     // Default
     return 'border border-slate-200';
   };
@@ -69,7 +81,7 @@ export function PublicDashboard() {
     if (badges >= 19 && arcade >= 1) {
       return (
         <div className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-full text-xs font-bold">
-          <CheckCircle className="w-3 h-3" />
+          <Trophy className="w-3 h-3" />
           FULLY COMPLETED
         </div>
       );
@@ -78,7 +90,31 @@ export function PublicDashboard() {
       return (
         <div className="flex items-center gap-1 px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-bold">
           <Award className="w-3 h-3" />
-          BADGES COMPLETE
+          ALL BADGES DONE
+        </div>
+      );
+    }
+    if (badges >= 15 && badges <= 18) {
+      return (
+        <div className="flex items-center gap-1 px-3 py-1 bg-purple-600 text-white rounded-full text-xs font-bold">
+          <Star className="w-3 h-3" />
+          ALMOST THERE
+        </div>
+      );
+    }
+    if (badges >= 10 && badges <= 14) {
+      return (
+        <div className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+          <Zap className="w-3 h-3" />
+          GREAT PROGRESS
+        </div>
+      );
+    }
+    if (badges >= 5 && badges <= 9) {
+      return (
+        <div className="flex items-center gap-1 px-3 py-1 bg-cyan-600 text-white rounded-full text-xs font-bold">
+          <Target className="w-3 h-3" />
+          GOOD START
         </div>
       );
     }
