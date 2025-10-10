@@ -531,6 +531,7 @@ export function AdminDashboard() {
               </p>
             )}
           </div>
+        </div>
 
 
     
