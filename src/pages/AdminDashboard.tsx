@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-// MODIFIED: No longer need Link from react-router-dom for this component
 import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';
 import { database } from '../lib/database';
@@ -74,9 +73,8 @@ export function AdminDashboard() {
   const [error, setError] = useState<string>('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [copyStatus, setCopyStatus] = useState(''); // For copy-to-clipboard feedback
+  const [copyStatus, setCopyStatus] = useState('');
 
-  // Modal state for bar (courses) and pie groups
   const [selectedCourse, setSelectedCourse] = useState<{
     name: string;
     fullName: string;
@@ -89,7 +87,6 @@ export function AdminDashboard() {
     participants: Participant[];
   } | null>(null);
 
-  // Ref to measure chart wrapper width for column click detection
   const chartWrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -117,7 +114,6 @@ export function AdminDashboard() {
     }
   };
   
-  // Handler to copy emails to clipboard
   const handleCopyEmails = (participantsToCopy: Participant[]) => {
     if (!participantsToCopy || participantsToCopy.length === 0) return;
 
@@ -125,7 +121,7 @@ export function AdminDashboard() {
     navigator.clipboard.writeText(emails).then(
       () => {
         setCopyStatus('Copied!');
-        setTimeout(() => setCopyStatus(''), 2000); // Reset after 2 seconds
+        setTimeout(() => setCopyStatus(''), 2000);
       },
       (err) => {
         console.error('Could not copy text: ', err);
@@ -200,10 +196,7 @@ export function AdminDashboard() {
           reportDate
         );
 
-        // OPTIMIZED: Batch upsert all participants at once
         await database.upsertParticipants(updatedParticipants);
-
-        // OPTIMIZED: Batch insert all snapshots at once
         await database.addSnapshots(snapshots);
 
         const upload: CsvUpload = {
@@ -268,24 +261,18 @@ export function AdminDashboard() {
     }
   };
 
-  // Active participants
   const activeParticipants = participants.filter((p) => p.skillBadgesCount > 0);
-
-  // compute how many participants completed the entire jam (19 badges + at least 1 arcade)
   const fullCompletionParticipants = participants.filter(
     (p) => (p.skillBadgesCount || 0) >= 19 && (p.arcadeGamesCount || 0) >= 1
   );
   const fullCompletions = fullCompletionParticipants.length;
 
-  // additional counts requested
   const nineteenPlusParticipants = participants.filter((p) => (p.skillBadgesCount || 0) >= 19);
   const nineteenCount = nineteenPlusParticipants.length;
   const fifteenPlusParticipants = participants.filter((p) => (p.skillBadgesCount || 0) >= 15);
   const fifteenPlusCount = fifteenPlusParticipants.length;
 
-  // Updated badge distribution groups with participant lists
   const distributionDetailed = useMemo(() => {
-    // Define groups in the desired order to guarantee legend sequence
     const groups: { name: string; participants: Participant[] }[] = [
       { name: '0 Badges', participants: [] },
       { name: '1-4 Badges', participants: [] },
@@ -301,19 +288,19 @@ export function AdminDashboard() {
       const arcade = p.arcadeGamesCount || 0;
 
       if (badges >= 19 && arcade > 0) {
-        groups[6].participants.push(p); // 19 Badges + Arcade
+        groups[6].participants.push(p);
       } else if (badges === 19) {
-        groups[5].participants.push(p); // 19 Badges
+        groups[5].participants.push(p);
       } else if (badges >= 15) {
-        groups[4].participants.push(p); // 15-18 Badges
+        groups[4].participants.push(p);
       } else if (badges >= 10) {
-        groups[3].participants.push(p); // 10-14 Badges
+        groups[3].participants.push(p);
       } else if (badges >= 5) {
-        groups[2].participants.push(p); // 5-9 Badges
+        groups[2].participants.push(p);
       } else if (badges >= 1) {
-        groups[1].participants.push(p); // 1-4 Badges
+        groups[1].participants.push(p);
       } else {
-        groups[0].participants.push(p); // 0 Badges
+        groups[0].participants.push(p);
       }
     });
 
@@ -324,13 +311,8 @@ export function AdminDashboard() {
     .map((g) => ({ name: g.name, value: g.participants.length }))
     .filter((item) => item.value > 0);
 
-  // Sort participants by badges (descending) for all participants list
   const sortedParticipants = [...participants].sort((a, b) => b.skillBadgesCount - a.skillBadgesCount);
 
-  /**
-   * Course full names (first 19 are C1..C19, final item is the arcade/game which we label ARC)
-   * -- IMPORTANT: keep this list in the same order you provided
-   */
   const courseFullNames = [
     'The Basics of Google Cloud Compute [Skill Badge]',
     'Get Started with Cloud Storage [Skill Badge]',
@@ -354,19 +336,13 @@ export function AdminDashboard() {
   ];
   const arcadeFullName = 'Level 3: Generative AI [Game]';
 
-  /**
-   * chartData: compute counts and also include the actual participant lists for each course (C1..C19) and ARC.
-   * This will let us open a modal with names/emails on column click.
-   */
   const chartData = useMemo(() => {
-    // init arrays
     const courseCounts = new Array(courseFullNames.length).fill(0);
     const courseParticipantLists: Participant[][] = courseFullNames.map(() => []);
     let arcCount = 0;
     const arcParticipants: Participant[] = [];
 
     participants.forEach((p) => {
-      // parse the participant's skillBadgeNames (pipe-separated)
       const sbRaw = (p as any).skillBadgeNames || '';
       const badges = String(sbRaw).split('|').map((s) => s.trim()).filter(Boolean);
 
@@ -403,7 +379,6 @@ export function AdminDashboard() {
     return data;
   }, [participants]);
 
-  // Custom label renderer used by LabelList to put a tiny thin count above each bar
   const renderTinyTopLabel = (props: any) => {
     const { x, y, width, value } = props;
     if (value === 0 || value == null) return null;
@@ -414,7 +389,7 @@ export function AdminDashboard() {
         x={cx}
         y={cy}
         textAnchor="middle"
-        fontSize={isMobile ? 10 : 16} // Responsive font size
+        fontSize={isMobile ? 10 : 16}
         fontWeight={400 as any}
         fill="#0f172a"
         style={{ pointerEvents: 'none' }}
@@ -424,7 +399,6 @@ export function AdminDashboard() {
     );
   };
 
-  // Handler when a bar is clicked: payload is the chart entry object
   const handleBarClick = (payload: any) => {
     if (!payload || !payload.payload) return;
     const entry = payload.payload as { name: string; fullName: string; value: number; participants?: Participant[] };
@@ -435,20 +409,15 @@ export function AdminDashboard() {
     });
   };
 
-  // NEW: click on entire chart column - maps click X to column index
   const onChartWrapperClick = (e: React.MouseEvent) => {
     if (!chartWrapperRef.current) return;
     const rect = chartWrapperRef.current.getBoundingClientRect();
     const total = chartData.length;
     if (total === 0) return;
 
-    // compute relative X inside the wrapper
     const relX = e.clientX - rect.left;
-    // clamp
     const clampedX = Math.max(0, Math.min(relX, rect.width));
-    // column width (equal buckets)
     const columnWidth = rect.width / total;
-    // index
     let idx = Math.floor(clampedX / columnWidth);
     if (idx < 0) idx = 0;
     if (idx >= total) idx = total - 1;
@@ -463,7 +432,6 @@ export function AdminDashboard() {
     }
   };
 
-  // Pie click handler: receives group's index or object
   const handlePieClick = (groupName: string) => {
     const group = distributionDetailed.find((g) => g.name === groupName);
     if (!group) return;
@@ -473,18 +441,15 @@ export function AdminDashboard() {
     });
   };
 
-  // helper to open modal for arbitrary participant list
   const openListModal = (title: string, participantsList: Participant[]) => {
     setSelectedGroup({ name: title, participants: participantsList });
   };
 
-  // Close modal
   const closeModal = () => {
     setSelectedCourse(null);
     setSelectedGroup(null);
   };
 
-  // Tier targets
   const tiers = [
     { id: 'tier1', title: 'Tier 1 (100)', target: 100, color: 'bg-blue-600' },
     { id: 'tier2', title: 'Tier 2 (70)', target: 70, color: 'bg-green-600' },
@@ -533,9 +498,7 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Top area: summary cards */}
         <div className={`grid grid-cols-1 ${userRole === 'admin' ? 'md:grid-cols-6' : 'md:grid-cols-5'} gap-4 mb-4 items-start`}>
-          {/* Small card: Total Participants (small) */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
               <Users className="w-5 h-5 text-blue-600" />
@@ -546,7 +509,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* Small card: Active Participants (small) - clickable */}
           <div
             role="button"
             tabIndex={0}
@@ -563,7 +525,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* NEW Small card: Full Completions (19 badges + arcade) - clickable */}
           <div
             role="button"
             tabIndex={0}
@@ -580,7 +541,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* NEW Small card: 19+ Courses Count (badges >= 19) - clickable */}
           <div
             role="button"
             tabIndex={0}
@@ -597,7 +557,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* NEW Small card: 15+ Courses Count - clickable */}
           <div
             role="button"
             tabIndex={0}
@@ -614,7 +573,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* Small card: Total Uploads (small) - ADMIN ONLY */}
           {userRole === 'admin' && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -628,7 +586,6 @@ export function AdminDashboard() {
           )}
         </div>
 
-        {/* Tier progress card: full width below summary cards */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -638,7 +595,6 @@ export function AdminDashboard() {
             <div className="text-sm font-medium text-slate-700">{fullCompletions} completed</div>
           </div>
 
-          {/* Vertical stack of three progress bars */}
           <div className="space-y-4">
             {tiers.map((t) => {
               const pct = t.target > 0 ? Math.min(100, Math.round((fullCompletions / t.target) * 100)) : 0;
@@ -661,7 +617,6 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Upload CSV card - ADMIN ONLY */}
         {userRole === 'admin' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
             <div className="flex items-center gap-2 mb-4">
@@ -751,7 +706,6 @@ export function AdminDashboard() {
           </div>
         )}
         
-        {/* Badge Distribution Pie Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <PieChartIcon className="w-5 h-5 text-blue-600" />
@@ -766,7 +720,7 @@ export function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={isMobile ? 120 : 220} // Responsive radius
+                    outerRadius={isMobile ? 120 : 220}
                     fill="#8884d8"
                     dataKey="value"
                     onClick={(data, index) => {
@@ -795,7 +749,6 @@ export function AdminDashboard() {
           )}
         </div>
 
-        {/* Course Completion Bar Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-5 h-5 text-blue-600" />
@@ -827,7 +780,7 @@ export function AdminDashboard() {
                     <Tooltip cursor={{fill: 'rgba(200, 200, 200, 0.2)'}} content={<></>} />
                     <Bar
                       dataKey="value"
-                      barSize={35} // Increased bar width
+                      barSize={35}
                       isAnimationActive={false}
                       onClick={(payload: any) => {
                         handleBarClick(payload);
@@ -842,7 +795,6 @@ export function AdminDashboard() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Legend mapping C1..C19 + ARC to full names */}
               <div className="mt-2 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {chartData.map((d, idx) => (
                   <div className="flex items-start gap-2" key={d.name}>
@@ -865,7 +817,6 @@ export function AdminDashboard() {
           )}
         </div>
         
-        {/* All Participants Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
@@ -910,7 +861,6 @@ export function AdminDashboard() {
                             View Profile
                           </a>
                         </td>
-                        {/* MODIFIED: Changed Link to an <a> tag */}
                         <td className="py-2 px-3 text-xs sm:text-sm">
                           <a href={`/participant/${participant.id}?view=admin`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                             View Details
@@ -930,7 +880,6 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Uploaded Files Section - ADMIN ONLY */}
         {userRole === 'admin' && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -978,7 +927,6 @@ export function AdminDashboard() {
         )}
       </main>
 
-      {/* Modal with sorted list and copy emails button */}
       {(selectedCourse || selectedGroup) && (() => {
         const participantsToShow = selectedCourse
             ? selectedCourse.participants
@@ -1019,8 +967,9 @@ export function AdminDashboard() {
                     <div className="text-center text-sm text-slate-600 py-8">No participants found.</div>
                   ) : (
                     <ul className="space-y-2">
+                      {/* THIS IS WHERE THE FIX IS. THE STRAY '_' IS REMOVED. */}
                       {sortedParticipantsInModal.map((p) => (
-              _              <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
+                        <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <div className="text-sm font-medium text-slate-800 truncate">{p.userName}</div>
