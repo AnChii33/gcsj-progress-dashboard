@@ -909,7 +909,7 @@ export function AdminDashboard() {
                         </td>
                         <td className="py-2 px-3 text-xs sm:text-sm">
                           <Link to={`/participant/${participant.id}?view=admin`} className="text-blue-600 hover:underline">
-                            View Details
+                            View Detailed Progress
                           </Link>
                         </td>
                     </tr>
