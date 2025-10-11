@@ -889,8 +889,8 @@ export function AdminDashboard() {
                   <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Email</th>
                   <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Skill Badges</th>
                   <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Arcade Games</th>
-                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Profile URL</th>
-                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Details</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">CSB Profile</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Detailed Progress Report</th>
                 </tr>
               </thead>
               <tbody>
