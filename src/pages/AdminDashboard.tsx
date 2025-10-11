@@ -904,7 +904,7 @@ export function AdminDashboard() {
                       <td className="py-2 px-3 text-xs sm:text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
                         <td className="py-2 px-3 text-xs sm:text-sm">
                           <a href={participant.profileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            View Profile
+                            Profile Link
                           </a>
                         </td>
                         <td className="py-2 px-3 text-xs sm:text-sm">
