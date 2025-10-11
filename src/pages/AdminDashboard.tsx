@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Import Link
+// MODIFIED: No longer need Link from react-router-dom for this component
+import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';
 import { database } from '../lib/database';
 import { parseCsvFile } from '../lib/csvParser';
@@ -21,7 +22,7 @@ import {
   Award,
   Star,
   PieChart as PieChartIcon,
-  ClipboardCopy, // Import ClipboardCopy icon
+  ClipboardCopy,
 } from 'lucide-react';
 import {
   PieChart,
@@ -116,7 +117,7 @@ export function AdminDashboard() {
     }
   };
   
-  // NEW: Handler to copy emails to clipboard
+  // Handler to copy emails to clipboard
   const handleCopyEmails = (participantsToCopy: Participant[]) => {
     if (!participantsToCopy || participantsToCopy.length === 0) return;
 
@@ -502,7 +503,6 @@ export function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* MODIFIED: Changed button to an anchor tag to open in a new tab */}
               <a
                 href="/"
                 target="_blank"
@@ -865,7 +865,7 @@ export function AdminDashboard() {
           )}
         </div>
         
-        {/* MODIFIED: All Participants Table */}
+        {/* All Participants Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
@@ -910,10 +910,11 @@ export function AdminDashboard() {
                             View Profile
                           </a>
                         </td>
+                        {/* MODIFIED: Changed Link to an <a> tag */}
                         <td className="py-2 px-3 text-xs sm:text-sm">
-                          <Link to={`/participant/${participant.id}?view=admin`} className="text-blue-600 hover:underline">
+                          <a href={`/participant/${participant.id}?view=admin`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                             View Details
-                          </Link>
+                          </a>
                         </td>
                     </tr>
                   ))
@@ -977,7 +978,7 @@ export function AdminDashboard() {
         )}
       </main>
 
-      {/* MODIFIED: Modal with sorted list and copy emails button */}
+      {/* Modal with sorted list and copy emails button */}
       {(selectedCourse || selectedGroup) && (() => {
         const participantsToShow = selectedCourse
             ? selectedCourse.participants
@@ -1019,7 +1020,7 @@ export function AdminDashboard() {
                   ) : (
                     <ul className="space-y-2">
                       {sortedParticipantsInModal.map((p) => (
-                        <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
+              _              <li key={p.id} className="p-2 rounded bg-slate-50 border border-slate-100">
                           <div className="flex items-center justify-between gap-4">
                             <div>
                               <div className="text-sm font-medium text-slate-800 truncate">{p.userName}</div>
