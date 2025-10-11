@@ -502,12 +502,15 @@ export function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate('/')}
+              {/* MODIFIED: Changed button to an anchor tag to open in a new tab */}
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="px-2 py-1 text-slate-700 hover:text-slate-900 font-medium transition text-xs sm:text-sm"
               >
                 View Public Dashboard
-              </button>
+              </a>
               {userRole === 'admin' && (
                 <button
                   onClick={() => navigate('/admin/settings')}
@@ -889,8 +892,8 @@ export function AdminDashboard() {
                   <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Email</th>
                   <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Skill Badges</th>
                   <th className="text-center py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Arcade Games</th>
-                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">CSB Profile</th>
-                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Detailed Progress Report</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Profile URL</th>
+                  <th className="text-left py-2 px-3 text-xs sm:text-sm font-semibold text-slate-700">Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -904,12 +907,12 @@ export function AdminDashboard() {
                       <td className="py-2 px-3 text-xs sm:text-sm text-center text-slate-700">{participant.arcadeGamesCount}</td>
                         <td className="py-2 px-3 text-xs sm:text-sm">
                           <a href={participant.profileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                            Profile Link
+                            View Profile
                           </a>
                         </td>
                         <td className="py-2 px-3 text-xs sm:text-sm">
                           <Link to={`/participant/${participant.id}?view=admin`} className="text-blue-600 hover:underline">
-                            Report Link
+                            View Details
                           </Link>
                         </td>
                     </tr>
